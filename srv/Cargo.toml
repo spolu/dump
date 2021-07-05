@@ -1,0 +1,27 @@
+[package]
+name = "srv"
+version = "0.1.0"
+edition = "2018"
+
+[[bin]]
+name = "srv"
+path = "bin/srv.rs"
+
+[dependencies]
+tokio = { version = "1.0.2", features = ["full"] }
+anyhow = "1.0.38"
+tracing = "0.1"
+tracing-subscriber = "0.2"
+warp = "0.3"
+reqwest = { version = "0.11.0", default-features=false, features=["rustls-tls"] }
+futures = "0.3.12"
+hyper = "0.14.2"
+tokio-stream = { version = "0.1.2", features = ["net"] }
+include_dir = "0.6.0"
+sled = "0.34.6"
+bincode = "1.2.1"
+tokio-serde = { version = "0.8.0", features = ["bincode"] }
+serde_json = "1.0"
+serde = { version = "1.0.120", features = ["rc", "derive"] }
+nanoid = "0.4.0"
+shellexpand = "2.1.0"
