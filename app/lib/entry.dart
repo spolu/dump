@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:app/model.dart';
 
-class Meta {
-  const Meta({required this.streams});
-  final List<String> streams;
-}
+class EntryItem extends StatefulWidget {
+  EntryItem({
+    required this.entry,
+  }) : super(key: ObjectKey(entry.id));
 
-class Entry extends StatefulWidget {
-  Entry({
-    required this.title,
-    required this.meta,
-    required this.body,
-  }) : super(key: ObjectKey(title));
-
-  final String title;
-  final Meta meta;
-  final String body;
+  final Entry entry;
 
   @override
-  _EntryState createState() => _EntryState();
+  _EntryItemState createState() => _EntryItemState();
 }
 
-class _EntryState extends State<Entry> {
+class _EntryItemState extends State<EntryItem> {
   final _body_controller = TextEditingController();
 
   @override
@@ -33,8 +25,7 @@ class _EntryState extends State<Entry> {
   Widget build(BuildContext context) {
     return Card(
       child: Column(children: [
-        Text(widget.title),
-        Text(widget.meta.streams.join(' ')),
+        Text(widget.entry.title),
         Container(
           child: TextField(
             controller: _body_controller,
