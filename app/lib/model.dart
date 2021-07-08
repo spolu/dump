@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 class Entry {
@@ -16,14 +17,56 @@ class Entry {
     return Entry(id: json['id'], title: json['title'], body: json['body']);
   }
 
-  static Future<List<Entry>> fetchEntries() async {
-    final response = await http.get(
-      Uri.parse('http://127.0.0.1:13371/entries'),
+  Future<Entry> update() async {
+    // post the entry as a json object to http://127.0.0.1/entries/:id
+    final response = await http.put(
+      Uri.parse(
+        'http://127.0.0.1:13371/entries/$id',
+      ),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'id': id,
+        'title': title,
+        'body': body,
+      }),
     );
 
     if (response.statusCode == 200) {
-      Iterable l = json.decode(response.body);
-      return List<Entry>.from(l.map((model) => Entry.fromJson(model)));
+      return Entry.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to update entry');
+    }
+  }
+}
+
+class EntryList {
+  const EntryList({
+    required this.entries,
+    required this.offset,
+    required this.total,
+  });
+
+  final List<Entry> entries;
+  final int offset;
+  final int total;
+
+  static Future<EntryList> fetch(int offset, int limit, String query) async {
+    final response = await http.get(
+      Uri.parse(
+          'http://127.0.0.1:13371/entries?offset=$offset&limit=$limit&query=$query'),
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return EntryList(
+        entries: (json['entries'] as List)
+            .map((entry) => Entry.fromJson(entry))
+            .toList(),
+        offset: json['offset'],
+        total: json['total'],
+      );
     } else {
       throw Exception('Failed to load entries');
     }
@@ -38,15 +81,30 @@ class Stream {
   factory Stream.fromJson(Map<String, dynamic> json) {
     return Stream(id: json['id'], name: json['name']);
   }
+}
 
-  static Future<List<Stream>> fetchStreams() async {
+class StreamList {
+  const StreamList({
+    required this.streams,
+    required this.total,
+  });
+
+  final List<Stream> streams;
+  final int total;
+
+  static Future<StreamList> fetch() async {
     final response = await http.get(
       Uri.parse('http://127.0.0.1:13371/streams'),
     );
 
     if (response.statusCode == 200) {
-      Iterable l = json.decode(response.body);
-      return List<Stream>.from(l.map((model) => Stream.fromJson(model)));
+      final json = jsonDecode(response.body);
+      return StreamList(
+        streams: (json['streams'] as List)
+            .map((entry) => Stream.fromJson(entry))
+            .toList(),
+        total: json['total'],
+      );
     } else {
       throw Exception('Failed to load streams');
     }

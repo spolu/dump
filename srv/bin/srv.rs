@@ -11,10 +11,9 @@ async fn main() {
     let api = filters::entries(db.open_tree("entries").unwrap())
         .or(filters::streams(db.open_tree("entries").unwrap()));
 
-
     let cors = warp::cors()
         .allow_any_origin()
-        .allow_headers(vec!["*"])
+        .allow_headers(vec!["content-type"])
         .allow_methods(vec!["POST", "GET", "PUT"]);
 
     let routes = api.with(cors).with(warp::log("entries"));
@@ -33,9 +32,22 @@ mod models {
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
+    pub struct EntryList {
+        pub total: usize,
+        pub offset: usize,
+        pub entries: Vec<Entry>,
+    }
+
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct Stream {
         pub id: String,
         pub name: String,
+    }
+
+    #[derive(Debug, Deserialize, Serialize, Clone)]
+    pub struct StreamList {
+        pub total: usize,
+        pub streams: Vec<Stream>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -121,27 +133,50 @@ mod filters {
 }
 
 mod handlers {
-    use super::models::{Entry, ListOptions, Stream};
+    use super::models::{Entry, EntryList, ListOptions, Stream, StreamList};
     use bincode::{deserialize, serialize};
     use nanoid::nanoid;
     use std::convert::Infallible;
+    use tracing::debug;
 
     pub async fn list_entries(
         opts: ListOptions,
         db: sled::Tree,
     ) -> Result<impl warp::Reply, Infallible> {
-        let entries: Vec<Entry> = db
+        let all_entries: Vec<Entry> = db
             .iter()
             .filter_map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
-                Some(e)
+                match opts.query.clone() {
+                    None => Some(e),
+                    Some(q) => {
+                        if e.title.to_lowercase().contains(q.to_lowercase().as_str())
+                            || e.body.to_lowercase().contains(q.to_lowercase().as_str())
+                        {
+                            debug!(query = q.as_str(), "match");
+                            Some(e)
+                        } else {
+                            debug!(query = q.as_str(), "no match");
+                            None
+                        }
+                    }
+                }
             })
+            .collect::<Vec<_>>();
+        let total = all_entries.len();
+
+        let entries = all_entries
+            .into_iter()
             .skip(opts.offset.unwrap_or(0))
             .take(opts.limit.unwrap_or(std::usize::MAX))
             .collect::<Vec<_>>();
 
-        Ok(warp::reply::json(&entries))
+        Ok(warp::reply::json(&EntryList {
+            entries,
+            total,
+            offset: opts.offset.unwrap_or(0),
+        }))
     }
 
     pub async fn create_entry(
@@ -183,6 +218,7 @@ mod handlers {
         tracing::debug!(
             id = entry.id.clone().unwrap().as_str(),
             title = entry.title.clone().as_str(),
+            body = entry.body.clone().as_str(),
             "update_entry",
         );
         db.insert(
@@ -208,7 +244,8 @@ mod handlers {
                 name: String::from("All"),
             },
         ];
+        let total = streams.len();
 
-        Ok(warp::reply::json(&streams))
+        Ok(warp::reply::json(&StreamList { streams, total }))
     }
 }
