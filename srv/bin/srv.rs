@@ -14,7 +14,7 @@ async fn main() {
     let cors = warp::cors()
         .allow_any_origin()
         .allow_headers(vec!["content-type"])
-        .allow_methods(vec!["POST", "GET", "PUT"]);
+        .allow_methods(vec!["POST", "GET", "PUT", "DELETE"]);
 
     let routes = api.with(cors).with(warp::log("entries"));
 
@@ -79,6 +79,7 @@ mod filters {
         entries_list(db.clone())
             .or(entries_create(db.clone()))
             .or(entries_update(db.clone()))
+            .or(entries_delete(db.clone()))
     }
 
     /// GET /entries?q=foo&offset=3&limit=5
@@ -112,6 +113,16 @@ mod filters {
             .and(json_body())
             .and(with(db))
             .and_then(handlers::update_entry)
+    }
+
+    /// DELETE /entries/:id
+    pub fn entries_delete(
+        db: sled::Tree,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("entries" / String)
+            .and(warp::delete())
+            .and(with(db))
+            .and_then(handlers::delete_entry)
     }
 
     pub fn streams(
@@ -228,6 +239,15 @@ mod handlers {
         .unwrap();
 
         Ok(warp::reply::json(&entry))
+    }
+
+    pub async fn delete_entry(
+        id: String,
+        db: sled::Tree,
+    ) -> Result<impl warp::Reply, Infallible> {
+        db.remove(id.as_bytes()).unwrap();
+
+        Ok(warp::reply::json(&id))
     }
 
     pub async fn list_streams(

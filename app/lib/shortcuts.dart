@@ -19,6 +19,12 @@ final createEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyC,
 );
 
+class deleteEntryIntent extends Intent {}
+
+final deleteEntryKeySet = LogicalKeySet(
+  LogicalKeyboardKey.keyD,
+);
+
 class searchIntent extends Intent {}
 
 final searchKeySet = LogicalKeySet(

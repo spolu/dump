@@ -19,39 +19,42 @@ class StreamItem extends StatelessWidget {
     if (stream.id == "all") {
       iconType = Icons.article;
     }
-    return Card(
-      elevation: 0,
-      color: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.all(0.0),
-      child: InkWell(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
         onTap: () {
           this.onTap();
         },
-        child: Padding(
-          padding: EdgeInsets.all(5.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(
-                width: 10.0,
-              ),
-              Icon(
-                iconType,
-                color: Theme.of(context).colorScheme.onBackground,
-                size: 13.0,
-              ),
-              SizedBox(
-                width: 10.0,
-              ),
-              Text(stream.name,
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontSize: 13.0,
-                    fontWeight: FontWeight.w800,
-                    color: Theme.of(context).colorScheme.onBackground,
-                  )),
-            ],
+        child: Card(
+          elevation: 0,
+          color: Colors.transparent,
+          clipBehavior: Clip.antiAlias,
+          margin: EdgeInsets.all(0.0),
+          child: Padding(
+            padding: EdgeInsets.all(5.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  width: 10.0,
+                ),
+                Icon(
+                  iconType,
+                  color: Theme.of(context).colorScheme.onBackground,
+                  size: 13.0,
+                ),
+                SizedBox(
+                  width: 10.0,
+                ),
+                Text(stream.name,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    )),
+              ],
+            ),
           ),
         ),
       ),
@@ -59,8 +62,8 @@ class StreamItem extends StatelessWidget {
   }
 }
 
-class StreamListView extends StatelessWidget {
-  StreamListView(
+class Menu extends StatelessWidget {
+  Menu(
       {required this.loading,
       required this.streams,
       required this.onStreamSelection})

@@ -18,7 +18,6 @@ class Entry {
   }
 
   Future<Entry> update() async {
-    // post the entry as a json object to http://127.0.0.1/entries/:id
     final response = await http.put(
       Uri.parse(
         'http://127.0.0.1:13371/entries/$id',
@@ -37,6 +36,41 @@ class Entry {
       return Entry.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to update entry');
+    }
+  }
+
+  Future<Entry> delete() async {
+    final response = await http.delete(
+      Uri.parse(
+        'http://127.0.0.1:13371/entries/$id',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      return this;
+    } else {
+      throw Exception('Failed to create entry');
+    }
+  }
+
+  static Future<Entry> create() async {
+    final response = await http.post(
+      Uri.parse(
+        'http://127.0.0.1:13371/entries',
+      ),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'title': '',
+        'body': '',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return Entry.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to create entry');
     }
   }
 }

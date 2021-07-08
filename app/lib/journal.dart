@@ -1,127 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:app/model.dart';
-import 'package:app/shortcuts.dart';
 import 'package:flutter/services.dart';
-import 'dart:developer';
 
-class EntryEdit extends StatefulWidget {
-  EntryEdit({
-    required this.entry,
-    required this.onUpdate,
-  }) : super(key: ObjectKey(entry.id));
-
-  final Entry entry;
-  final Function(Entry) onUpdate;
-
-  @override
-  _EntryEditState createState() => _EntryEditState();
-}
-
-class _EntryEditState extends State<EntryEdit> {
-  final _title_controller = TextEditingController();
-  final _body_controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _title_controller.text = widget.entry.title;
-    _body_controller.text = widget.entry.body;
-  }
-
-  @override
-  void dispose() {
-    _title_controller.dispose();
-    _body_controller.dispose();
-    this.widget.onUpdate(Entry(
-        id: this.widget.entry.id,
-        title: _title_controller.text,
-        body: _body_controller.text));
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-        elevation: 2,
-        insetAnimationDuration: Duration(milliseconds: 0),
-        insetAnimationCurve: Curves.linear,
-        insetPadding: EdgeInsets.all(50.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(2.0),
-        ),
-        child: Container(
-          width: 800,
-          height: 640,
-          child: Column(
-            children: <Widget>[
-              Container(
-                  child: Row(children: [
-                SizedBox(
-                  width: 20.0,
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: Color.fromRGBO(0, 0, 0, 0.2),
-                  size: 13.0,
-                ),
-                Expanded(
-                  child: TextField(
-                    autofocus: true,
-                    controller: _title_controller,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 2.0, horizontal: 7.0),
-                    ),
-                    style: TextStyle(
-                        fontSize: 13.0,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black),
-                  ),
-                )
-              ])),
-              Expanded(
-                child: Container(
-                  child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 20.0,
-                        ),
-                        Icon(
-                          Icons.article,
-                          color: Color.fromRGBO(0, 0, 0, 0.15),
-                          size: 13.0,
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _body_controller,
-                            keyboardType: TextInputType.multiline,
-                            maxLines: null,
-                            minLines: 8,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.only(
-                                  top: 3.5,
-                                  bottom: 10.0,
-                                  left: 7.0,
-                                  right: 7.0),
-                            ),
-                            style: TextStyle(
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w200,
-                                color: Colors.black87),
-                          ),
-                        ),
-                      ]),
-                ),
-              ),
-            ],
-          ),
-        ));
-  }
-}
+import 'entry_edit.dart';
+import 'model.dart';
+import 'shortcuts.dart';
 
 class EntryItem extends StatefulWidget {
   EntryItem(
@@ -150,7 +32,9 @@ class _EntryItemState extends State<EntryItem> {
     super.initState();
     _focusNode = FocusNode();
     _focusNode.addListener(() {
-      this.widget.onFocus();
+      if (_focusNode.hasFocus) {
+        this.widget.onFocus();
+      }
     });
   }
 
@@ -163,7 +47,7 @@ class _EntryItemState extends State<EntryItem> {
   @override
   void didUpdateWidget(EntryItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selected && !oldWidget.selected) {
+    if (widget.selected && !oldWidget.selected && widget.selected) {
       _focusNode.requestFocus();
     }
   }
@@ -205,7 +89,7 @@ class _EntryItemState extends State<EntryItem> {
                   style: TextStyle(
                     fontSize: 13.0,
                     fontWeight: FontWeight.w800,
-                    color: this.widget.selected
+                    color: _focusNode.hasFocus
                         ? Colors.purple[800]
                         : Theme.of(context).colorScheme.onBackground,
                   )),
@@ -243,7 +127,7 @@ class EntryLog extends StatefulWidget {
 class _EntryLogState extends State<EntryLog> {
   List<Entry> _entries = [];
   int _total = 0;
-  int _selected = 0;
+  int _selected = -1;
 
   @override
   initState() {
@@ -255,19 +139,23 @@ class _EntryLogState extends State<EntryLog> {
     });
   }
 
+  void refresh() {
+    setState(() {});
+    Future<EntryList> future = EntryList.fetch(0, 10, this.widget.searchText);
+    future.then((EntryList data) {
+      setState(() {
+        _selected = -1;
+        _total = data.total;
+        _entries = data.entries;
+      });
+    });
+  }
+
   @override
   void didUpdateWidget(EntryLog oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchText != oldWidget.searchText) {
-      setState(() {});
-      Future<EntryList> future = EntryList.fetch(0, 10, this.widget.searchText);
-      future.then((EntryList data) {
-        setState(() {
-          _selected = 0;
-          _total = data.total;
-          _entries = data.entries;
-        });
-      });
+      refresh();
     }
   }
 
@@ -333,16 +221,11 @@ class _EntryLogState extends State<EntryLog> {
         nextEntryKeySet: nextEntryIntent(),
         prevEntryKeySet: prevEntryIntent(),
         createEntryKeySet: createEntryIntent(),
+        deleteEntryKeySet: deleteEntryIntent(),
         searchKeySet: searchIntent(),
       },
       child: Actions(
         actions: {
-          createEntryIntent: CallbackAction(onInvoke: (e) {
-            // log("CREATE ENTRY");
-          }),
-          searchIntent: CallbackAction(onInvoke: (e) {
-            this.widget.onSearch();
-          }),
           prevEntryIntent: CallbackAction(onInvoke: (e) {
             setState(() {
               if (_selected > 0) {
@@ -356,6 +239,32 @@ class _EntryLogState extends State<EntryLog> {
                 _selected += 1;
               }
             });
+          }),
+          createEntryIntent: CallbackAction(onInvoke: (e) {
+            Entry.create().then((entry) {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return EntryEdit(
+                        entry: entry,
+                        onUpdate: (Entry e) {
+                          e.update().then((value) {
+                            refresh();
+                          });
+                        });
+                  });
+            });
+          }),
+          deleteEntryIntent: CallbackAction(onInvoke: (e) {
+            _entries[_selected].delete().then((entry) {
+              refresh();
+            });
+          }),
+          searchIntent: CallbackAction(onInvoke: (e) {
+            setState(() {
+              _selected = -1;
+            });
+            this.widget.onSearch();
           }),
         },
         child: ListView.builder(
@@ -387,7 +296,10 @@ class _SearchBoxState extends State<SearchBox> {
   final _search_controller = TextEditingController();
 
   void _handleTextControllerUpdate() {
-    widget.onUpdate(_search_controller.text);
+    Future.delayed(
+      const Duration(seconds: 0),
+      () => widget.onUpdate(_search_controller.text),
+    );
   }
 
   @override
@@ -406,10 +318,15 @@ class _SearchBoxState extends State<SearchBox> {
   @override
   void didUpdateWidget(SearchBox oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchText != _search_controller.text) {
-      _search_controller.removeListener(_handleTextControllerUpdate);
-      _search_controller.text = widget.searchText;
-      _search_controller.addListener(_handleTextControllerUpdate);
+    if (!this.widget.searchFocusNode.hasFocus) {
+      if (widget.searchText != _search_controller.text) {
+        _search_controller.removeListener(_handleTextControllerUpdate);
+        _search_controller.text = widget.searchText;
+        _search_controller.addListener(_handleTextControllerUpdate);
+        this.widget.searchFocusNode.requestFocus();
+        _search_controller.selection = TextSelection(
+            baseOffset: 0, extentOffset: _search_controller.text.length);
+      }
     }
   }
 
@@ -452,18 +369,18 @@ class _SearchBoxState extends State<SearchBox> {
   }
 }
 
-class MainView extends StatefulWidget {
-  MainView({required this.searchText, required this.onSearchTextUpdate})
+class Journal extends StatefulWidget {
+  Journal({required this.searchText, required this.onSearchTextUpdate})
       : super();
 
   final String searchText;
   final Function(String) onSearchTextUpdate;
 
   @override
-  _MainViewState createState() => _MainViewState();
+  _JournalState createState() => _JournalState();
 }
 
-class _MainViewState extends State<MainView> {
+class _JournalState extends State<Journal> {
   late FocusNode _searchFocusNode;
 
   @override

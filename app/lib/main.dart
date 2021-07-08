@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:app/fixed_split.dart';
 import 'dart:developer';
 import 'package:app/model.dart';
-import 'package:app/stream.dart';
-import 'package:app/entry.dart';
+import 'package:app/menu.dart';
+import 'package:app/journal.dart';
 import 'package:app/shortcuts.dart';
 
 void main() => runApp(LitApp());
@@ -69,7 +69,7 @@ class _LitTopState extends State<LitTop> {
     return Scaffold(
       body: FixedSplit(
         axis: Axis.horizontal,
-        initialChildrenSizes: const [300.0, -1],
+        initialChildrenSizes: const [200.0, -1],
         minSizes: [200.0, 200.0],
         splitters: [
           SizedBox(
@@ -82,20 +82,20 @@ class _LitTopState extends State<LitTop> {
           ),
         ],
         children: [
-          _buildStreams(),
-          _buildEntries(),
+          _buildMenu(),
+          _buildJournal(),
         ],
       ),
     );
   }
 
-  Widget _buildStreams() {
+  Widget _buildMenu() {
     return FutureBuilder<StreamList>(
         future: _futureStreamList,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasData) {
-              return StreamListView(
+              return Menu(
                   loading: false,
                   streams: snapshot.data!.streams,
                   onStreamSelection: _handleStreamSelection);
@@ -105,15 +105,15 @@ class _LitTopState extends State<LitTop> {
                       color: Colors.red, fontWeight: FontWeight.bold));
             }
           }
-          return StreamListView(
+          return Menu(
               loading: true,
               streams: [],
               onStreamSelection: _handleStreamSelection);
         });
   }
 
-  Widget _buildEntries() {
-    return MainView(
+  Widget _buildJournal() {
+    return Journal(
         searchText: _searchText, onSearchTextUpdate: _handleSearcTextUpdate);
   }
 }
