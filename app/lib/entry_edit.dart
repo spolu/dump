@@ -17,22 +17,26 @@ class EntryEdit extends StatefulWidget {
 
 class _EntryEditState extends State<EntryEdit> {
   final _title_controller = TextEditingController();
+  final _meta_controller = TextEditingController();
   final _body_controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _title_controller.text = widget.entry.title;
+    _meta_controller.text = widget.entry.meta;
     _body_controller.text = widget.entry.body;
   }
 
   @override
   void dispose() {
     _title_controller.dispose();
+    _meta_controller.dispose();
     _body_controller.dispose();
     this.widget.onUpdate(Entry(
         id: this.widget.entry.id,
         title: _title_controller.text,
+        meta: _meta_controller.text,
         body: _body_controller.text));
     super.dispose();
   }
@@ -66,6 +70,33 @@ class _EntryEditState extends State<EntryEdit> {
                   child: TextField(
                     autofocus: true,
                     controller: _title_controller,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 2.0, horizontal: 7.0),
+                    ),
+                    style: TextStyle(
+                        fontSize: 13.0,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black),
+                  ),
+                )
+              ])),
+              Container(
+                  child: Row(children: [
+                SizedBox(
+                  width: 20.0,
+                ),
+                Icon(
+                  Icons.settings,
+                  color: Color.fromRGBO(0, 0, 0, 0.2),
+                  size: 13.0,
+                ),
+                Expanded(
+                  child: TextField(
+                    autofocus: true,
+                    controller: _meta_controller,
                     keyboardType: TextInputType.text,
                     decoration: const InputDecoration(
                       border: InputBorder.none,

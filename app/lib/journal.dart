@@ -139,7 +139,15 @@ class _EntryLogState extends State<EntryLog> {
     });
   }
 
-  void refresh() {
+  @override
+  void didUpdateWidget(EntryLog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchText != oldWidget.searchText) {
+      _refresh();
+    }
+  }
+
+  void _refresh() {
     setState(() {});
     Future<EntryList> future = EntryList.fetch(0, 10, this.widget.searchText);
     future.then((EntryList data) {
@@ -151,17 +159,19 @@ class _EntryLogState extends State<EntryLog> {
     });
   }
 
-  @override
-  void didUpdateWidget(EntryLog oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.searchText != oldWidget.searchText) {
-      refresh();
-    }
-  }
-
-  void handleEntryFocus(int index) {
-    setState(() {
-      _selected = index;
+  void _createEntry(context) {
+    Entry.create().then((entry) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return EntryEdit(
+                entry: entry,
+                onUpdate: (Entry e) {
+                  e.update().then((value) {
+                    _refresh();
+                  });
+                });
+          });
     });
   }
 
@@ -241,23 +251,11 @@ class _EntryLogState extends State<EntryLog> {
             });
           }),
           createEntryIntent: CallbackAction(onInvoke: (e) {
-            Entry.create().then((entry) {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return EntryEdit(
-                        entry: entry,
-                        onUpdate: (Entry e) {
-                          e.update().then((value) {
-                            refresh();
-                          });
-                        });
-                  });
-            });
+            _createEntry(context);
           }),
           deleteEntryIntent: CallbackAction(onInvoke: (e) {
             _entries[_selected].delete().then((entry) {
-              refresh();
+              _refresh();
             });
           }),
           searchIntent: CallbackAction(onInvoke: (e) {
@@ -267,11 +265,30 @@ class _EntryLogState extends State<EntryLog> {
             this.widget.onSearch();
           }),
         },
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16.0),
-          itemBuilder: _itemBuilder,
-          itemCount: _total,
-        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 20.0,
+          ),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                _createEntry(context);
+              },
+              child: Icon(
+                Icons.add,
+                size: 18,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemBuilder: _itemBuilder,
+              itemCount: _total,
+            ),
+          ),
+        ]),
       ),
     );
   }

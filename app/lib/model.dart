@@ -7,14 +7,20 @@ class Entry {
   const Entry({
     required this.id,
     required this.title,
+    required this.meta,
     required this.body,
   });
   final String id;
   final String title;
+  final String meta;
   final String body;
 
   factory Entry.fromJson(Map<String, dynamic> json) {
-    return Entry(id: json['id'], title: json['title'], body: json['body']);
+    return Entry(
+        id: json['id'],
+        meta: json['meta'],
+        title: json['title'],
+        body: json['body']);
   }
 
   Future<Entry> update() async {
@@ -28,6 +34,7 @@ class Entry {
       body: jsonEncode(<String, String>{
         'id': id,
         'title': title,
+        'meta': meta,
         'body': body,
       }),
     );
@@ -63,6 +70,7 @@ class Entry {
       },
       body: jsonEncode(<String, String>{
         'title': '',
+        'meta': '',
         'body': '',
       }),
     );

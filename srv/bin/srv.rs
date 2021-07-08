@@ -27,6 +27,8 @@ mod models {
     #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct Entry {
         pub id: Option<String>,
+        pub created: Option<u64>,
+        pub meta: String,
         pub title: String,
         pub body: String,
     }
@@ -146,29 +148,74 @@ mod filters {
 mod handlers {
     use super::models::{Entry, EntryList, ListOptions, Stream, StreamList};
     use bincode::{deserialize, serialize};
+    use lazy_static::lazy_static;
     use nanoid::nanoid;
+    use regex::Regex;
     use std::convert::Infallible;
-    use tracing::debug;
+    use std::time::SystemTime;
+
+    pub fn extract_streams(s: &String) -> Vec<String> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"\{[^\{\}]+\}").unwrap();
+        }
+        RE.captures_iter(s)
+            .map(|c| String::from(&c[0]))
+            .collect::<Vec<_>>()
+    }
+
+    pub fn match_meta(query: &String, entry: &Entry) -> bool {
+        let q_streams = extract_streams(query);
+        let m_streams = extract_streams(&entry.meta);
+        q_streams.iter().for_each(|s| {
+            tracing::debug!(steram = s.as_str(), "query stream");
+        });
+        m_streams.iter().for_each(|s| {
+            tracing::debug!(steram = s.as_str(), "meta stream");
+        });
+        let mut m = true;
+        for qs in q_streams {
+            if !m {
+                break;
+            }
+            m = m_streams.iter().any(|ms| *ms == qs);
+        }
+        tracing::debug!(is_match = m, "match");
+        m
+    }
+
+    // pub fn clean_streams(query: &String) -> String {
+    // }
+
+    pub fn match_title(query: &String, entry: &Entry) -> bool {
+        entry
+            .title
+            .to_lowercase()
+            .contains(query.to_lowercase().as_str())
+    }
+
+    pub fn match_body(query: &String, entry: &Entry) -> bool {
+        entry
+            .body
+            .to_lowercase()
+            .contains(query.to_lowercase().as_str())
+    }
 
     pub async fn list_entries(
         opts: ListOptions,
         db: sled::Tree,
     ) -> Result<impl warp::Reply, Infallible> {
+        let q = opts.query;
         let all_entries: Vec<Entry> = db
             .iter()
             .filter_map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
-                match opts.query.clone() {
+                match q.clone() {
                     None => Some(e),
                     Some(q) => {
-                        if e.title.to_lowercase().contains(q.to_lowercase().as_str())
-                            || e.body.to_lowercase().contains(q.to_lowercase().as_str())
-                        {
-                            debug!(query = q.as_str(), "match");
+                        if match_meta(&q, &e) && (match_title(&q, &e) || match_body(&q, &e)) {
                             Some(e)
                         } else {
-                            debug!(query = q.as_str(), "no match");
                             None
                         }
                     }
@@ -194,15 +241,24 @@ mod handlers {
         create: Entry,
         db: sled::Tree,
     ) -> Result<impl warp::Reply, Infallible> {
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
         let entry = Entry {
-            id: Some(nanoid!()),
+            id: Some(format!("{}-{}", now, nanoid!())),
+            created: Some(now),
             title: create.title,
+            meta: create.meta,
             body: create.body,
         };
 
         tracing::debug!(
             id = entry.id.clone().unwrap().as_str(),
+            created = entry.created.unwrap(),
             title = entry.title.clone().as_str(),
+            meta = entry.meta.clone().as_str(),
             "create_entry",
         );
 
@@ -220,16 +276,16 @@ mod handlers {
         update: Entry,
         db: sled::Tree,
     ) -> Result<impl warp::Reply, Infallible> {
-        // TODO(spolu): check that the entry exists.
-        let entry = Entry {
-            id: Some(id),
-            title: update.title,
-            body: update.body,
-        };
+        let mut entry: Entry = deserialize(&db.get(id).unwrap().unwrap()).unwrap();
+        entry.title = update.title;
+        entry.body = update.body;
+        entry.meta = update.meta;
+
         tracing::debug!(
             id = entry.id.clone().unwrap().as_str(),
+            created = entry.created.unwrap(),
             title = entry.title.clone().as_str(),
-            body = entry.body.clone().as_str(),
+            meta = entry.meta.clone().as_str(),
             "update_entry",
         );
         db.insert(
@@ -241,12 +297,8 @@ mod handlers {
         Ok(warp::reply::json(&entry))
     }
 
-    pub async fn delete_entry(
-        id: String,
-        db: sled::Tree,
-    ) -> Result<impl warp::Reply, Infallible> {
+    pub async fn delete_entry(id: String, db: sled::Tree) -> Result<impl warp::Reply, Infallible> {
         db.remove(id.as_bytes()).unwrap();
-
         Ok(warp::reply::json(&id))
     }
 
