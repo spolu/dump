@@ -25,7 +25,7 @@ cd app/
 flutter build web
 ```
 
-Edit `app/build/web/index.html` and replace:
+Edit `build/web/index.html` and replace:
 ```html
 <base href="/">
 ```
