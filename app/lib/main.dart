@@ -1,10 +1,11 @@
+import 'package:app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:app/fixed_split.dart';
 import 'dart:developer';
-import 'package:app/model.dart';
 import 'package:app/menu.dart';
 import 'package:app/journal.dart';
-import 'package:app/shortcuts.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() => runApp(LitApp());
 
@@ -19,12 +20,14 @@ class LitApp extends StatelessWidget {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
-        // fontFamily: 'Georgia',
         colorScheme: ColorScheme.light(
           background: Color.fromRGBO(247, 246, 243, 1.0),
           onBackground: Color.fromRGBO(25, 23, 17, 0.7),
         ),
         dividerColor: Color.fromRGBO(247, 246, 243, 1.0),
+        textTheme: GoogleFonts.robotoTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
       home: LitTop(),
     );
@@ -38,7 +41,7 @@ class LitTop extends StatefulWidget {
 
 class _LitTopState extends State<LitTop> {
   late Future<StreamList> _futureStreamList;
-  String _searchText = '';
+  SearchQuery _searchQuery = SearchQuery('{Inbox}');
 
   @override
   void initState() {
@@ -48,43 +51,44 @@ class _LitTopState extends State<LitTop> {
 
   void _handleSearcTextUpdate(String searchText) {
     setState(() {
-      _searchText = searchText;
-      log("UDPATED STATE: searchText=" + _searchText);
+      // _searchText = searchText;
+      // log("UDPATED STATE: searchText=" + _searchText);
     });
   }
 
   void _handleStreamSelection(Stream stream) {
-    setState(() {
-      if (stream.id == "all") {
-        _searchText = "";
-      } else {
-        _searchText = "{" + stream.name + "}";
-      }
-      log("UDPATED STATE: searchText=" + _searchText);
-    });
+    if (stream.id == "all") {
+      _searchQuery.update("");
+    } else {
+      _searchQuery.update("{" + stream.name + "}");
+    }
+    // log("UDPATED STATE: searchText=" + _searchText);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FixedSplit(
-        axis: Axis.horizontal,
-        initialChildrenSizes: const [200.0, -1],
-        minSizes: [200.0, 200.0],
-        splitters: [
-          SizedBox(
-            width: 2,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor,
+    return ChangeNotifierProvider(
+      create: (context) => _searchQuery,
+      child: Scaffold(
+        body: FixedSplit(
+          axis: Axis.horizontal,
+          initialChildrenSizes: const [200.0, -1],
+          minSizes: [200.0, 200.0],
+          splitters: [
+            SizedBox(
+              width: 2,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor,
+                ),
               ),
             ),
-          ),
-        ],
-        children: [
-          _buildMenu(),
-          _buildJournal(),
-        ],
+          ],
+          children: [
+            _buildMenu(),
+            _buildJournal(),
+          ],
+        ),
       ),
     );
   }
@@ -113,7 +117,6 @@ class _LitTopState extends State<LitTop> {
   }
 
   Widget _buildJournal() {
-    return Journal(
-        searchText: _searchText, onSearchTextUpdate: _handleSearcTextUpdate);
+    return Journal();
   }
 }

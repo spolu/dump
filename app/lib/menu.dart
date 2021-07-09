@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:app/model.dart';
+import 'package:app/models.dart';
 
 class StreamItem extends StatelessWidget {
   // constructor that accepts a stream and a callback when the stream is selected
@@ -83,15 +83,20 @@ class Menu extends StatelessWidget {
           });
     }));
     return Container(
-        decoration: new BoxDecoration(
-          color: Theme.of(context).colorScheme.background,
-        ),
-        child: loading
-            ? new Center(
-                child: new CircularProgressIndicator(),
-              )
-            : ListView(
-                padding: EdgeInsets.symmetric(vertical: 10.0),
-                children: streams));
+      decoration: new BoxDecoration(
+        color: Theme.of(context).colorScheme.background,
+      ),
+      child: Column(children: [
+        Expanded(
+            child: loading
+                ? new Center(
+                    child: new CircularProgressIndicator(),
+                  )
+                : ListView(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+                    children: streams)),
+      ]),
+    );
   }
 }

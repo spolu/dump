@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'model.dart';
+import 'models.dart';
 
 class EntryEdit extends StatefulWidget {
   EntryEdit({
@@ -35,6 +36,7 @@ class _EntryEditState extends State<EntryEdit> {
     _body_controller.dispose();
     this.widget.onUpdate(Entry(
         id: this.widget.entry.id,
+        created: this.widget.entry.created,
         title: _title_controller.text,
         meta: _meta_controller.text,
         body: _body_controller.text));
@@ -53,65 +55,77 @@ class _EntryEditState extends State<EntryEdit> {
         ),
         child: Container(
           width: 800,
-          height: 640,
+          height: 400,
           child: Column(
             children: <Widget>[
               Container(
+                  // decoration: new BoxDecoration(color: Colors.blue),
+                  padding: EdgeInsets.only(top: 20.0),
                   child: Row(children: [
-                SizedBox(
-                  width: 20.0,
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: Color.fromRGBO(0, 0, 0, 0.2),
-                  size: 13.0,
-                ),
-                Expanded(
-                  child: TextField(
-                    autofocus: true,
-                    controller: _title_controller,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 2.0, horizontal: 7.0),
+                    SizedBox(
+                      width: 20.0,
                     ),
-                    style: TextStyle(
-                        fontSize: 13.0,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black),
-                  ),
-                )
-              ])),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Color.fromRGBO(0, 0, 0, 0.2),
+                      size: 13.0,
+                    ),
+                    Expanded(
+                      child: Container(
+                        // decoration: new BoxDecoration(color: Colors.green),
+                        child: TextField(
+                          autofocus: true,
+                          controller: _title_controller,
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 7.0),
+                          ),
+                          style: TextStyle(
+                            height: 1.0,
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ])),
               Container(
+                  decoration: new BoxDecoration(color: Colors.transparent),
                   child: Row(children: [
-                SizedBox(
-                  width: 20.0,
-                ),
-                Icon(
-                  Icons.settings,
-                  color: Color.fromRGBO(0, 0, 0, 0.2),
-                  size: 13.0,
-                ),
-                Expanded(
-                  child: TextField(
-                    autofocus: true,
-                    controller: _meta_controller,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 2.0, horizontal: 7.0),
+                    SizedBox(
+                      width: 20.0,
                     ),
-                    style: TextStyle(
-                        fontSize: 13.0,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black),
-                  ),
-                )
-              ])),
+                    Icon(
+                      Icons.settings,
+                      color: Color.fromRGBO(0, 0, 0, 0.2),
+                      size: 13.0,
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _meta_controller,
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.only(
+                              top: 10.0, bottom: 10.0, left: 6.0, right: 7.0),
+                        ),
+                        style: GoogleFonts.sourceCodePro(
+                            height: 1.0,
+                            fontSize: 13,
+                            color: Colors.black45,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    )
+                  ])),
               Expanded(
                 child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10.0),
+                  decoration: new BoxDecoration(color: Colors.transparent),
                   child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -131,19 +145,35 @@ class _EntryEditState extends State<EntryEdit> {
                             minLines: 8,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
+                              isDense: true,
                               contentPadding: const EdgeInsets.only(
-                                  top: 3.5,
-                                  bottom: 10.0,
-                                  left: 7.0,
-                                  right: 7.0),
+                                  top: 2, bottom: 0, left: 8.0, right: 7.0),
                             ),
                             style: TextStyle(
                                 fontSize: 13.0,
-                                fontWeight: FontWeight.w200,
-                                color: Colors.black87),
+                                fontWeight: FontWeight.w100,
+                                color: Colors.black54),
                           ),
                         ),
                       ]),
+                ),
+              ),
+              Container(
+                decoration: new BoxDecoration(color: Colors.transparent),
+                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+                alignment: Alignment.centerRight,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    "Save",
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ),
               ),
             ],

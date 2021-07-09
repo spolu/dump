@@ -150,7 +150,7 @@ mod handlers {
     use bincode::{deserialize, serialize};
     use lazy_static::lazy_static;
     use nanoid::nanoid;
-    use regex::Regex;
+    use regex::{Captures, Regex};
     use std::convert::Infallible;
     use std::time::SystemTime;
 
@@ -183,21 +183,32 @@ mod handlers {
         m
     }
 
-    // pub fn clean_streams(query: &String) -> String {
-    // }
+    pub fn clean_streams(query: &String) -> String {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"\{[^\{\}]+\}").unwrap();
+        }
+        let s = String::from(RE.replace_all(query, |_: &Captures| "").trim());
+        lazy_static! {
+            static ref RE2: Regex = Regex::new(r"\{[^\{\}]*$").unwrap();
+        }
+        let s = String::from(RE2.replace_all(s.as_str(), |_: &Captures| "").trim());
+
+        tracing::debug!(s = s.as_str(), "clean_streams");
+        s
+    }
 
     pub fn match_title(query: &String, entry: &Entry) -> bool {
         entry
             .title
             .to_lowercase()
-            .contains(query.to_lowercase().as_str())
+            .contains(clean_streams(query).to_lowercase().as_str())
     }
 
     pub fn match_body(query: &String, entry: &Entry) -> bool {
         entry
             .body
             .to_lowercase()
-            .contains(query.to_lowercase().as_str())
+            .contains(clean_streams(query).to_lowercase().as_str())
     }
 
     pub async fn list_entries(
@@ -207,6 +218,7 @@ mod handlers {
         let q = opts.query;
         let all_entries: Vec<Entry> = db
             .iter()
+            .rev()
             .filter_map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();

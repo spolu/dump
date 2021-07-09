@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class Entry {
   const Entry({
     required this.id,
+    required this.created,
     required this.title,
     required this.meta,
     required this.body,
   });
   final String id;
+  final int created;
   final String title;
   final String meta;
   final String body;
@@ -18,6 +21,7 @@ class Entry {
   factory Entry.fromJson(Map<String, dynamic> json) {
     return Entry(
         id: json['id'],
+        created: json['created'],
         meta: json['meta'],
         title: json['title'],
         body: json['body']);
@@ -33,7 +37,7 @@ class Entry {
       },
       body: jsonEncode(<String, String>{
         'id': id,
-        'title': title,
+        'title': title == '' ? "(empty)" : title,
         'meta': meta,
         'body': body,
       }),
@@ -60,7 +64,7 @@ class Entry {
     }
   }
 
-  static Future<Entry> create() async {
+  static Future<Entry> create(List<String> streams) async {
     final response = await http.post(
       Uri.parse(
         'http://127.0.0.1:13371/entries',
@@ -70,7 +74,7 @@ class Entry {
       },
       body: jsonEncode(<String, String>{
         'title': '',
-        'meta': '',
+        'meta': streams.join(' '),
         'body': '',
       }),
     );
@@ -150,5 +154,32 @@ class StreamList {
     } else {
       throw Exception('Failed to load streams');
     }
+  }
+}
+
+class SearchQuery extends ChangeNotifier {
+  SearchQuery(String query) {
+    this._query = query;
+  }
+
+  late String _query;
+
+  void update(String query) {
+    this._query = query;
+    notifyListeners();
+  }
+
+  String query() {
+    return this._query;
+  }
+
+  List<String> streams() {
+    RegExp r = new RegExp(
+      r"\{[^\{\}]+}",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    Iterable streams = r.allMatches(this._query);
+    return List<String>.of(streams.map((match) => match.group(0)));
   }
 }
