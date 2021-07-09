@@ -183,3 +183,16 @@ class SearchQuery extends ChangeNotifier {
     return List<String>.of(streams.map((match) => match.group(0)));
   }
 }
+
+class Streams extends ChangeNotifier {
+  Streams() {
+    this._streams = [];
+    this.update();
+  }
+
+  late List<String> _streams;
+
+  void update() {
+    // Update the streams on the network and call notifyListeners().
+  }
+}

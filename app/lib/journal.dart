@@ -54,7 +54,9 @@ class _EntryItemState extends State<EntryItem> {
   void didUpdateWidget(EntryItem oldWidget) {
     if (widget.selected != oldWidget.selected) {
       if (widget.selected) {
-        _focusNode.requestFocus();
+        if (!_focusNode.hasFocus) {
+          _focusNode.requestFocus();
+        }
       }
     }
     super.didUpdateWidget(oldWidget);
@@ -392,8 +394,8 @@ class _SearchBoxState extends State<SearchBox> {
           ),
           Expanded(
             child: TextField(
-              focusNode: this.widget.searchFocusNode,
               autofocus: true,
+              focusNode: this.widget.searchFocusNode,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -427,6 +429,12 @@ class _JournalState extends State<Journal> {
   void initState() {
     super.initState();
     _searchFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   @override
