@@ -10,6 +10,12 @@ Follow Flutter's [Install Instructions](https://flutter.dev/docs/get-started/ins
 
 Follow Rust's [Install Instructions](https://www.rust-lang.org/tools/install)
 
+### Clone Lit
+
+```bash
+git clone https://github.com/spolu/lit.git
+```
+
 ## Build Web App
 
 Navigate to the `app` subdirectory and run:
