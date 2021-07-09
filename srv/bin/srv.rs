@@ -16,7 +16,10 @@ async fn main() {
         .allow_headers(vec!["content-type"])
         .allow_methods(vec!["POST", "GET", "PUT", "DELETE"]);
 
-    let routes = api.with(cors).with(warp::log("entries"));
+    let routes = api
+        .or(warp::path("static").and(warp::fs::dir("../app/build/web")))
+        .with(cors)
+        .with(warp::log("entries"));
 
     warp::serve(routes).run(([127, 0, 0, 1], 13371)).await;
 }
