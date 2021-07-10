@@ -64,7 +64,7 @@ class Entry {
     }
   }
 
-  static Future<Entry> create(List<String> streams) async {
+  static Future<Entry> create(List<Stream> streams) async {
     final response = await http.post(
       Uri.parse(
         'http://127.0.0.1:13371/entries',
@@ -74,7 +74,7 @@ class Entry {
       },
       body: jsonEncode(<String, String>{
         'title': '',
-        'meta': streams.join(' '),
+        'meta': streams.map((stream) => "{" + stream.name + "}").join(' '),
         'body': '',
       }),
     );
@@ -157,12 +157,20 @@ class StreamList {
   }
 }
 
-class SearchQuery extends ChangeNotifier {
-  SearchQuery(String query) {
+class SearchQueryModel extends ChangeNotifier {
+  SearchQueryModel(String query) {
     this._query = query;
   }
 
   late String _query;
+
+  void streamSelected(Stream stream) {
+    if (stream.id == "all") {
+      update("");
+    } else {
+      update("{" + stream.name + "}");
+    }
+  }
 
   void update(String query) {
     this._query = query;
@@ -172,27 +180,53 @@ class SearchQuery extends ChangeNotifier {
   String query() {
     return this._query;
   }
+}
 
-  List<String> streams() {
+class StreamsModel extends ChangeNotifier {
+  StreamsModel() {
+    this._streams = [];
+    this.update();
+  }
+
+  late List<Stream> _streams;
+
+  List<Stream> streams() {
+    return _streams;
+  }
+
+  Stream? _fromName(String name) {
+    for (var i = 0; i < _streams.length; i++) {
+      if (_streams[i].name == name) {
+        return _streams[i];
+      }
+    }
+    return null;
+  }
+
+  List<Stream> fromMetaOrQuery(String metaOrQuery) {
+    log("fromMetaOrQuery: $metaOrQuery");
     RegExp r = new RegExp(
       r"\{[^\{\}]+}",
       caseSensitive: false,
       multiLine: false,
     );
-    Iterable streams = r.allMatches(this._query);
-    return List<String>.of(streams.map((match) => match.group(0)));
+    List<Stream> streams = [];
+    r.allMatches(metaOrQuery).map((match) => match.group(0)).forEach((m) {
+      if (m != null) {
+        var s = _fromName(m.substring(1, m.length - 1));
+        if (s != null) {
+          streams.add(s);
+        }
+      }
+    });
+    return streams;
   }
-}
-
-class Streams extends ChangeNotifier {
-  Streams() {
-    this._streams = [];
-    this.update();
-  }
-
-  late List<String> _streams;
 
   void update() {
     // Update the streams on the network and call notifyListeners().
+    StreamList.fetch().then((ss) {
+      _streams = ss.streams;
+      notifyListeners();
+    });
   }
 }

@@ -189,7 +189,9 @@ class _EntryLogState extends State<EntryLog> {
   }
 
   void _createEntry(context) {
-    Entry.create(Provider.of<SearchQuery>(context, listen: false).streams())
+    Entry.create(Provider.of<StreamsModel>(context, listen: false)
+            .fromMetaOrQuery(
+                Provider.of<SearchQueryModel>(context, listen: false).query()))
         .then((entry) {
       showDialog(
           context: context,
@@ -443,7 +445,7 @@ class _JournalState extends State<Journal> {
       decoration: BoxDecoration(
         color: Colors.white,
       ),
-      child: Consumer<SearchQuery>(
+      child: Consumer<SearchQueryModel>(
         builder: (context, searchQuery, child) => Column(
           children: [
             SearchBox(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:app/models.dart';
 
 class StreamItem extends StatelessWidget {
@@ -13,7 +14,7 @@ class StreamItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var iconType = Icons.label;
-    if (stream.id == "inbox") {
+    if (stream.id == "0-inbox") {
       iconType = Icons.inbox;
     }
     if (stream.id == "all") {
@@ -63,15 +64,11 @@ class StreamItem extends StatelessWidget {
 }
 
 class Menu extends StatelessWidget {
-  Menu(
-      {required this.loading,
-      required this.streams,
-      required this.onStreamSelection})
-      : super();
+  Menu({
+    required this.streams,
+  }) : super();
 
-  final bool loading;
   final List<Stream> streams;
-  final Function(Stream) onStreamSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +76,8 @@ class Menu extends StatelessWidget {
       return StreamItem(
           stream: stream,
           onTap: () {
-            this.onStreamSelection(stream);
+            Provider.of<SearchQueryModel>(context, listen: false)
+                .streamSelected(stream);
           });
     }));
     return Container(
@@ -88,14 +86,9 @@ class Menu extends StatelessWidget {
       ),
       child: Column(children: [
         Expanded(
-            child: loading
-                ? new Center(
-                    child: new CircularProgressIndicator(),
-                  )
-                : ListView(
-                    padding:
-                        EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
-                    children: streams)),
+            child: ListView(
+                padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+                children: streams)),
       ]),
     );
   }

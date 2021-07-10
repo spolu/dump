@@ -41,7 +41,8 @@ class LitTop extends StatefulWidget {
 
 class _LitTopState extends State<LitTop> {
   late Future<StreamList> _futureStreamList;
-  SearchQuery _searchQuery = SearchQuery('{Inbox}');
+  SearchQueryModel _searchQuery = SearchQueryModel('{Inbox}');
+  StreamsModel _streams = StreamsModel();
 
   @override
   void initState() {
@@ -49,26 +50,13 @@ class _LitTopState extends State<LitTop> {
     _futureStreamList = StreamList.fetch();
   }
 
-  void _handleSearcTextUpdate(String searchText) {
-    setState(() {
-      // _searchText = searchText;
-      // log("UDPATED STATE: searchText=" + _searchText);
-    });
-  }
-
-  void _handleStreamSelection(Stream stream) {
-    if (stream.id == "all") {
-      _searchQuery.update("");
-    } else {
-      _searchQuery.update("{" + stream.name + "}");
-    }
-    // log("UDPATED STATE: searchText=" + _searchText);
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => _searchQuery,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => _searchQuery),
+        ChangeNotifierProvider(create: (context) => _streams),
+      ],
       child: Scaffold(
         body: FixedSplit(
           axis: Axis.horizontal,
@@ -85,38 +73,15 @@ class _LitTopState extends State<LitTop> {
             ),
           ],
           children: [
-            _buildMenu(),
-            _buildJournal(),
+            Consumer<StreamsModel>(
+              builder: (context, streams, child) => Menu(
+                streams: streams.streams(),
+              ),
+            ),
+            Journal(),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildMenu() {
-    return FutureBuilder<StreamList>(
-        future: _futureStreamList,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasData) {
-              return Menu(
-                  loading: false,
-                  streams: snapshot.data!.streams,
-                  onStreamSelection: _handleStreamSelection);
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}',
-                  style: TextStyle(
-                      color: Colors.red, fontWeight: FontWeight.bold));
-            }
-          }
-          return Menu(
-              loading: true,
-              streams: [],
-              onStreamSelection: _handleStreamSelection);
-        });
-  }
-
-  Widget _buildJournal() {
-    return Journal();
   }
 }
