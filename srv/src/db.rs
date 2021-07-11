@@ -38,9 +38,6 @@ pub fn extract_stream_ids(s: &String) -> Vec<String> {
 
 pub fn match_meta(query_streams: &Vec<Stream>, entry: &Entry) -> bool {
     let stream_ids = extract_stream_ids(&entry.meta);
-    for id in stream_ids.clone() {
-        tracing::debug!(id = id.as_str(), "stream_id_match_meta");
-    }
     let mut m = true;
     for qs in query_streams {
         if !m {
@@ -48,7 +45,6 @@ pub fn match_meta(query_streams: &Vec<Stream>, entry: &Entry) -> bool {
         }
         m = stream_ids.iter().any(|id| *id == qs.id);
     }
-    // tracing::debug!(is_match = m, "match");
     m
 }
 
@@ -61,7 +57,6 @@ pub fn clean_stream_names(query: &String) -> String {
         static ref RE2: Regex = Regex::new(r"\{[^\{\}]*$").unwrap();
     }
     let s = String::from(RE2.replace_all(s.as_str(), |_: &Captures| "").trim());
-    tracing::debug!(s = s.as_str(), "clean_stream_names");
     s
 }
 
@@ -166,16 +161,6 @@ impl DB {
             .iter()
             .map(|sn| self.stream_by_name(sn, false))
             .collect::<Result<Vec<_>>>()?;
-        for s in streams.clone() {
-            match s {
-                Some(s) => tracing::debug!(
-                    name = s.name.as_str(),
-                    id = s.id.as_str(),
-                    "streams_from_query"
-                ),
-                None => (),
-            }
-        }
 
         Ok(streams.into_iter().filter_map(|s| s).collect::<Vec<_>>())
     }
@@ -200,7 +185,7 @@ impl DB {
             }
             _ => {}
         });
-        tracing::debug!(meta = m.as_str(), "preprocess_meta");
+        // tracing::debug!(meta = m.as_str(), "preprocess_meta");
         Ok(m)
     }
 
@@ -208,9 +193,6 @@ impl DB {
     /// (`_stream_id_[StreamID]__`), and replace them with their name (`{StreamName}`).
     fn postprocess_meta(&self, meta: &String) -> Result<String> {
         let stream_ids = extract_stream_ids(meta);
-        for id in stream_ids.clone() {
-            tracing::debug!(id = id.as_str(), "postprocess_stream_ids");
-        }
         let streams = stream_ids
             .iter()
             .map(|si| self.stream_by_id(si))
@@ -223,7 +205,7 @@ impl DB {
                 format!("{{{}}}", s.name.as_str()).as_str(),
             );
         });
-        tracing::debug!(meta = m.as_str(), "postprocess_meta");
+        // tracing::debug!(meta = m.as_str(), "postprocess_meta");
         Ok(m)
     }
 
@@ -235,15 +217,17 @@ impl DB {
 
         let meta = self.preprocess_meta(&create.meta)?;
 
-        let entry = Entry {
+        let mut entry = Entry {
             id: Some(format!("{}-{}", now, nanoid!())),
             created: Some(now),
             title: create.title.clone(),
-            meta,
+            meta: meta.clone(),
             body: create.body.clone(),
         };
 
         self.insert_entry(&entry).unwrap();
+
+        entry.meta = self.postprocess_meta(&meta)?;
 
         Ok(entry)
     }
@@ -325,5 +309,51 @@ impl DB {
                 deserialize(&x.clone().unwrap().1.to_owned()).unwrap()
             })
             .collect::<Vec<_>>())
+    }
+
+    pub fn delete_stream(&self, id: &String) -> Result<()> {
+        let s = &self.streams.get(id)?;
+        let stream = match s {
+            Some(d) => {
+                let stream: Stream = deserialize(d)?;
+                Some(stream)
+            }
+            None => None,
+        };
+        if !stream.is_some() {
+            return Ok(());
+        }
+
+        // Remove the stream from its entries.
+        let streams = vec![stream.unwrap()];
+        let all_entries: Vec<Entry> = self
+            .entries
+            .iter()
+            .rev()
+            .filter_map(|x| {
+                // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
+                let mut e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
+                if match_meta(&streams, &e) {
+                    e.meta = e.meta.replace(
+                        format!("_stream_id_[{}]__", id.as_str()).as_str(),
+                        "",
+                    );
+                    e.meta = String::from(e.meta.replacen("  ", " ", 2).trim());
+                    e.meta = self.postprocess_meta(&e.meta).unwrap();
+                    Some(e)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        // And reinsert them.
+        all_entries.iter().for_each(|e| {
+            self.insert_entry(e).unwrap();
+        });
+
+        self.streams.remove(id.as_bytes())?;
+
+        Ok(())
     }
 }

@@ -98,6 +98,7 @@ mod filters {
         db: &DB,
     ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         streams_list(db.clone())
+            .or(streams_delete(db.clone()))
     }
 
     /// GET /streams?q=foo&offset=3&limit=5
@@ -109,6 +110,16 @@ mod filters {
             .and(warp::query::<ListOptions>())
             .and(with(db))
             .and_then(handlers::list_streams)
+    }
+
+    /// DELETE /streams/:id
+    pub fn streams_delete(
+        db: DB,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("streams" / String)
+            .and(warp::delete())
+            .and(with(db))
+            .and_then(handlers::delete_stream)
     }
 }
 
@@ -191,5 +202,16 @@ mod handlers {
         );
 
         Ok(warp::reply::json(&StreamList { streams, total }))
+    }
+
+    pub async fn delete_stream(id: String, db:DB) -> Result<impl warp::Reply, Infallible> {
+        db.delete_stream(&id).unwrap();
+
+        tracing::debug!(
+            id = id.as_str(),
+            "delete_stream",
+        );
+
+        Ok(warp::reply::json(&id))
     }
 }

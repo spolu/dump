@@ -127,6 +127,20 @@ class Stream {
   factory Stream.fromJson(Map<String, dynamic> json) {
     return Stream(id: json['id'], name: json['name']);
   }
+
+  Future<Stream> delete() async {
+    final response = await http.delete(
+      Uri.parse(
+        'http://127.0.0.1:13371/streams/$id',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      return this;
+    } else {
+      throw Exception('Failed to create entry');
+    }
+  }
 }
 
 class StreamList {
@@ -164,12 +178,27 @@ class SearchQueryModel extends ChangeNotifier {
 
   late String _query;
 
-  void streamSelected(Stream stream) {
+  void streamSelect(Stream stream) {
     if (stream.id == "all") {
       update("");
     } else {
       update("{" + stream.name + "}");
     }
+  }
+
+  void streamToggle(Stream stream) {
+    if (_query.contains("{" + stream.name + "}")) {
+      _query = _query.replaceAll("{" + stream.name + "}", "");
+    } else {
+      _query += " {" + stream.name + "}";
+    }
+    _query = _query.replaceAll("  ", " ");
+    _query = _query.trim();
+    notifyListeners();
+  }
+
+  bool containsStream(Stream stream) {
+    return _query.contains("{" + stream.name + "}");
   }
 
   void update(String query) {

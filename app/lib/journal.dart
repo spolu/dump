@@ -75,12 +75,14 @@ class _EntryItemState extends State<EntryItem> {
         onTap: () {
           showDialog(
               context: context,
-              builder: (context) {
+              builder: (_context) {
+                var streams = Provider.of<StreamsModel>(context, listen: false);
                 return EntryEdit(
                     entry: this.widget.entry,
                     onUpdate: (Entry e) {
                       e.update().then((e) {
                         this.widget.onEntryUpdate(e);
+                        streams.update();
                       });
                     });
               });
@@ -195,12 +197,14 @@ class _EntryLogState extends State<EntryLog> {
         .then((entry) {
       showDialog(
           context: context,
-          builder: (context) {
+          builder: (_context) {
+            var streams = Provider.of<StreamsModel>(context, listen: false);
             return EntryEdit(
                 entry: entry,
                 onUpdate: (Entry e) {
                   e.update().then((value) {
                     _refresh(false);
+                    streams.update();
                   });
                 });
           });

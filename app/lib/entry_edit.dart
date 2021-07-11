@@ -31,15 +31,15 @@ class _EntryEditState extends State<EntryEdit> {
 
   @override
   void dispose() {
-    _title_controller.dispose();
-    _meta_controller.dispose();
-    _body_controller.dispose();
     this.widget.onUpdate(Entry(
         id: this.widget.entry.id,
         created: this.widget.entry.created,
         title: _title_controller.text,
         meta: _meta_controller.text,
         body: _body_controller.text));
+    _title_controller.dispose();
+    _meta_controller.dispose();
+    _body_controller.dispose();
     super.dispose();
   }
 
