@@ -10,46 +10,34 @@ Follow Flutter's [Install Instructions](https://flutter.dev/docs/get-started/ins
 
 Follow Rust's [Install Instructions](https://www.rust-lang.org/tools/install)
 
-### Clone Lit
+### Clone Dump
 
 ```bash
 git clone https://github.com/spolu/dump.git
+cd dump
 ```
 
-## Build Web App
-
-Navigate to the `app` subdirectory and run:
+## Build MacOS app
 
 ```bash
-cd app/
-flutter build web
-```
-
-Edit `build/web/index.html` and replace:
-```html
-<base href="/">
-```
-with:
-```html
-<base href="/static/">
+cd app && flutter build macos && cd ..
 ```
 
 ## Build the Rust Backend Binary
 
-Navigate to the `srv` subdirectory and run:
-
 ```bash
-cd srv/
-cargo build --release
+cd srv && cargo build --release && cd ..
 ```
 
-# Running Lit
+# Running Dump
 
-Navigate to the `srv` subdirectory and run:
+Run the local Rust server:
 
 ```bash
-RUST_LOG=info ./target/release/srv
+RUST_LOG=info ./srv/target/release/srv
 ```
 
-Connect with your Web Browser at:
-[http://127.0.0.1:13371/static/](http://127.0.0.1:13371/static/)
+Start the MacOS app:
+```bash
+open ./app/build/macos/Build/Products/Release/Dump.app
+```

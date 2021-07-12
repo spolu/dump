@@ -19,7 +19,7 @@ async fn main() {
         .allow_methods(vec!["POST", "GET", "PUT", "DELETE"]);
 
     let routes = api
-        .or(warp::path("static").and(warp::fs::dir("../app/build/web")))
+        // .or(warp::path("static").and(warp::fs::dir("../app/build/web")))
         .with(cors)
         .with(warp::log("entries"));
 

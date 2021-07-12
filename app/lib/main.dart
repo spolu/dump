@@ -1,13 +1,14 @@
 import 'package:app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:app/fixed_split.dart';
-import 'dart:developer';
 import 'package:app/menu.dart';
 import 'package:app/journal.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() => runApp(DumpApp());
+void main() {
+  runApp(DumpApp());
+}
 
 class DumpApp extends StatelessWidget {
   @override
@@ -40,14 +41,12 @@ class DumpTop extends StatefulWidget {
 }
 
 class _DumpTopState extends State<DumpTop> {
-  late Future<StreamList> _futureStreamList;
   SearchQueryModel _searchQuery = SearchQueryModel('{Inbox}');
   StreamsModel _streams = StreamsModel();
 
   @override
   void initState() {
     super.initState();
-    _futureStreamList = StreamList.fetch();
   }
 
   @override
