@@ -1,4 +1,4 @@
-# Dump - A journaling app
+# Dump
 
 <img width="1050" alt="Screen Shot 2021-07-12 at 13 58 08" src="https://user-images.githubusercontent.com/15067/125283961-3488cc00-e319-11eb-9df0-b015785005d7.png">
 
