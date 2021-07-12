@@ -6,11 +6,17 @@ class nextEntryIntent extends Intent {}
 final nextEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyJ,
 );
+final nextEntryKeySetDown = LogicalKeySet(
+  LogicalKeyboardKey.arrowDown,
+);
 
 class prevEntryIntent extends Intent {}
 
 final prevEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyK,
+);
+final prevEntryKeySetUp = LogicalKeySet(
+  LogicalKeyboardKey.arrowUp,
 );
 
 class createEntryIntent extends Intent {}

@@ -8,7 +8,7 @@ async fn main() {
     let subscriber = FmtSubscriber::builder().with_env_filter(filter).finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    let db = DB::new(&shellexpand::tilde("~/.lit.db").into_owned()).unwrap();
+    let db = DB::new(&shellexpand::tilde("~/.dump.db").into_owned()).unwrap();
     db.init().unwrap();
 
     let api = filters::entries(&db).or(filters::streams(&db));
@@ -29,7 +29,7 @@ async fn main() {
 mod filters {
     use super::handlers;
     use srv::db::DB;
-    use srv::models::{Entry, ListOptions};
+    use srv::models::{Entry, ListOptions, Stream};
     use warp::Filter;
 
     fn with<T: Clone + Send>(
@@ -38,7 +38,10 @@ mod filters {
         warp::any().map(move || t.clone())
     }
 
-    fn json_body() -> impl Filter<Extract = (Entry,), Error = warp::Rejection> + Clone {
+    fn entry_json_body() -> impl Filter<Extract = (Entry,), Error = warp::Rejection> + Clone {
+        warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+    }
+    fn stream_json_body() -> impl Filter<Extract = (Stream,), Error = warp::Rejection> + Clone {
         warp::body::content_length_limit(1024 * 16).and(warp::body::json())
     }
 
@@ -68,7 +71,7 @@ mod filters {
     ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         warp::path!("entries")
             .and(warp::post())
-            .and(json_body())
+            .and(entry_json_body())
             .and(with(db))
             .and_then(handlers::create_entry)
     }
@@ -79,7 +82,7 @@ mod filters {
     ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         warp::path!("entries" / String)
             .and(warp::put())
-            .and(json_body())
+            .and(entry_json_body())
             .and(with(db))
             .and_then(handlers::update_entry)
     }
@@ -99,6 +102,7 @@ mod filters {
     ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         streams_list(db.clone())
             .or(streams_delete(db.clone()))
+            .or(streams_update(db.clone()))
     }
 
     /// GET /streams?q=foo&offset=3&limit=5
@@ -110,6 +114,17 @@ mod filters {
             .and(warp::query::<ListOptions>())
             .and(with(db))
             .and_then(handlers::list_streams)
+    }
+
+    /// PUT /streams/:id with JSON body
+    pub fn streams_update(
+        db: DB,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("streams" / String)
+            .and(warp::put())
+            .and(stream_json_body())
+            .and(with(db))
+            .and_then(handlers::update_stream)
     }
 
     /// DELETE /streams/:id
@@ -184,10 +199,7 @@ mod handlers {
     pub async fn delete_entry(id: String, db: DB) -> Result<impl warp::Reply, Infallible> {
         db.delete_entry(&id).unwrap();
 
-        tracing::debug!(
-            id = id.as_str(),
-            "delete_entry",
-        );
+        tracing::debug!(id = id.as_str(), "delete_entry",);
 
         Ok(warp::reply::json(&id))
     }
@@ -196,22 +208,35 @@ mod handlers {
         let streams: Vec<Stream> = db.list_streams().unwrap();
         let total = streams.len();
 
-        tracing::debug!(
-            total,
-            "list_streams",
-        );
+        tracing::debug!(total, "list_streams",);
 
         Ok(warp::reply::json(&StreamList { streams, total }))
     }
 
-    pub async fn delete_stream(id: String, db:DB) -> Result<impl warp::Reply, Infallible> {
+    pub async fn delete_stream(id: String, db: DB) -> Result<impl warp::Reply, Infallible> {
         db.delete_stream(&id).unwrap();
 
-        tracing::debug!(
-            id = id.as_str(),
-            "delete_stream",
-        );
+        tracing::debug!(id = id.as_str(), "delete_stream",);
 
         Ok(warp::reply::json(&id))
+    }
+
+    pub async fn update_stream(
+        id: String,
+        update: Stream,
+        db: DB,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let mut stream = db.get_stream(&id).unwrap().unwrap();
+        stream.name = update.name;
+
+        db.insert_stream(&stream).unwrap();
+
+        tracing::debug!(
+            id = stream.id.clone().as_str(),
+            name = stream.name.clone().as_str(),
+            "update_stream",
+        );
+
+        Ok(warp::reply::json(&stream))
     }
 }

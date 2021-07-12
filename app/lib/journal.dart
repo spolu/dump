@@ -14,14 +14,14 @@ import 'dart:developer';
 class EntryItem extends StatefulWidget {
   EntryItem(
       {required this.entry,
-      required this.searchText,
+      required this.searchQuery,
       required this.onEntryUpdate,
       required this.onFocus,
       required this.selected})
       : super(key: ObjectKey(entry.id));
 
   final Entry entry;
-  final String searchText;
+  final String searchQuery;
   final Function(Entry) onEntryUpdate;
   final Function() onFocus;
   final bool selected;
@@ -67,7 +67,6 @@ class _EntryItemState extends State<EntryItem> {
     return Card(
       elevation: 0,
       color: Colors.transparent,
-      // clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.symmetric(vertical: 5.0),
       child: InkWell(
         focusNode: _focusNode,
@@ -108,8 +107,33 @@ class _EntryItemState extends State<EntryItem> {
               SizedBox(
                 width: 5.0,
               ),
+              Container(
+                child: Row(children: <Widget>[
+                  for (var s in this
+                      .widget
+                      .entry
+                      .streamNamesNotInQuery(this.widget.searchQuery))
+                    Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                        padding: const EdgeInsets.all(1.0),
+                        decoration: BoxDecoration(
+                          border:
+                              Border.all(color: Colors.grey[400]!, width: 1.0),
+                          borderRadius: BorderRadius.circular(3.0),
+                        ),
+                        child: Text(s,
+                            style: TextStyle(
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[500])))
+                ]),
+              ),
+              SizedBox(
+                width: 5.0,
+              ),
               Expanded(
-                child: Text(this.widget.entry.body.replaceAll('\n', ' '),
+                // child: Text(this.widget.entry.body.replaceAll('\n', ' '),
+                child: Text('',
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.left,
                     style: TextStyle(
@@ -215,7 +239,7 @@ class _EntryLogState extends State<EntryLog> {
     if (index < _entries.length) {
       return EntryItem(
           entry: _entries[index],
-          searchText: this.widget.searchQuery,
+          searchQuery: this.widget.searchQuery,
           onEntryUpdate: (e) {
             _refresh(false);
           },
@@ -263,7 +287,9 @@ class _EntryLogState extends State<EntryLog> {
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
         nextEntryKeySet: nextEntryIntent(),
+        nextEntryKeySetDown: nextEntryIntent(),
         prevEntryKeySet: prevEntryIntent(),
+        prevEntryKeySetUp: prevEntryIntent(),
         createEntryKeySet: createEntryIntent(),
         deleteEntryKeySet: deleteEntryIntent(),
         searchKeySet: searchIntent(),

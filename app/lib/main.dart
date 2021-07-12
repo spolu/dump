@@ -7,13 +7,13 @@ import 'package:app/journal.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() => runApp(LitApp());
+void main() => runApp(DumpApp());
 
-class LitApp extends StatelessWidget {
+class DumpApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Lit',
+      title: 'Dump',
       theme: ThemeData(
         // brightness: Brightness.light,
         // primaryColor: Colors.teal,
@@ -29,17 +29,17 @@ class LitApp extends StatelessWidget {
           Theme.of(context).textTheme,
         ),
       ),
-      home: LitTop(),
+      home: DumpTop(),
     );
   }
 }
 
-class LitTop extends StatefulWidget {
+class DumpTop extends StatefulWidget {
   @override
-  _LitTopState createState() => _LitTopState();
+  _DumpTopState createState() => _DumpTopState();
 }
 
-class _LitTopState extends State<LitTop> {
+class _DumpTopState extends State<DumpTop> {
   late Future<StreamList> _futureStreamList;
   SearchQueryModel _searchQuery = SearchQueryModel('{Inbox}');
   StreamsModel _streams = StreamsModel();

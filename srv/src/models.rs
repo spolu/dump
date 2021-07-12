@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Entry {
@@ -16,10 +17,28 @@ pub struct EntryList {
     pub entries: Vec<Entry>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Eq)]
 pub struct Stream {
     pub id: String,
     pub name: String,
+}
+
+impl PartialEq for Stream {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl PartialOrd for Stream {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.name == "Inbox" {
+            Some(Ordering::Less)
+        } else if other.name == "Inbox" {
+            Some(Ordering::Greater)
+        } else {
+            self.name.partial_cmp(&other.name)
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

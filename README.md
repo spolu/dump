@@ -13,7 +13,7 @@ Follow Rust's [Install Instructions](https://www.rust-lang.org/tools/install)
 ### Clone Lit
 
 ```bash
-git clone https://github.com/spolu/lit.git
+git clone https://github.com/spolu/dump.git
 ```
 
 ## Build Web App

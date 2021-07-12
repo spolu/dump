@@ -95,9 +95,17 @@ impl DB {
         let entries = self
             .entries
             .iter()
-            .map(|x| {
-                // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
-                deserialize(&x.clone().unwrap().1.to_owned()).unwrap()
+            .filter_map(|x| {
+                let id =
+                    String::from(std::str::from_utf8(&x.clone().unwrap().0.to_owned()).unwrap());
+                match deserialize(&x.clone().unwrap().1.to_owned()) {
+                    Ok(e) => Some(e),
+                    _ => {
+                        // Deserialization failed, remove the id.
+                        self.entries.remove(id.as_bytes()).unwrap();
+                        None
+                    }
+                }
             })
             .collect::<Vec<Entry>>();
         entries.iter().for_each(|e| {
@@ -301,14 +309,35 @@ impl DB {
     }
 
     pub fn list_streams(&self) -> Result<Vec<Stream>> {
-        Ok(self
+        let mut streams = self
             .streams
             .iter()
             .map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 deserialize(&x.clone().unwrap().1.to_owned()).unwrap()
             })
-            .collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        streams.sort_by(|a: &Stream, b: &Stream| a.partial_cmp(&b).unwrap());
+
+        Ok(streams)
+    }
+
+    pub fn insert_stream(&self, update: &Stream) -> Result<()> {
+        self.streams
+            .insert(update.id.clone().as_bytes(), serialize(&update).unwrap())?;
+        Ok(())
+    }
+
+    pub fn get_stream(&self, id: &String) -> Result<Option<Stream>> {
+        let s = &self.streams.get(id)?;
+        match s {
+            Some(d) => {
+                let stream: Stream = deserialize(d)?;
+                Ok(Some(stream))
+            }
+            None => Ok(None),
+        }
     }
 
     pub fn delete_stream(&self, id: &String) -> Result<()> {
@@ -334,10 +363,9 @@ impl DB {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let mut e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
                 if match_meta(&streams, &e) {
-                    e.meta = e.meta.replace(
-                        format!("_stream_id_[{}]__", id.as_str()).as_str(),
-                        "",
-                    );
+                    e.meta = e
+                        .meta
+                        .replace(format!("_stream_id_[{}]__", id.as_str()).as_str(), "");
                     e.meta = String::from(e.meta.replacen("  ", " ", 2).trim());
                     e.meta = self.postprocess_meta(&e.meta).unwrap();
                     Some(e)

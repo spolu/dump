@@ -27,6 +27,23 @@ class Entry {
         body: json['body']);
   }
 
+  List<String> streamNamesNotInQuery(String query) {
+    RegExp r = new RegExp(
+      r"\{[^\{\}]+}",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    List<String> ss = [];
+    r.allMatches(meta).map((match) => match.group(0)).forEach((m) {
+      if (m != null) {
+        if (!query.contains(m)) {
+          ss.add(m.substring(1, m.length - 1));
+        }
+      }
+    });
+    return ss;
+  }
+
   Future<Entry> update() async {
     final response = await http.put(
       Uri.parse(
@@ -128,6 +145,27 @@ class Stream {
     return Stream(id: json['id'], name: json['name']);
   }
 
+  Future<Stream> update() async {
+    final response = await http.put(
+      Uri.parse(
+        'http://127.0.0.1:13371/streams/$id',
+      ),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'id': id,
+        'name': name,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return Stream.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to update stream');
+    }
+  }
+
   Future<Stream> delete() async {
     final response = await http.delete(
       Uri.parse(
@@ -197,6 +235,13 @@ class SearchQueryModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void streamRemove(Stream stream) {
+    _query = _query.replaceAll("{" + stream.name + "}", "");
+    _query = _query.replaceAll("  ", " ");
+    _query = _query.trim();
+    notifyListeners();
+  }
+
   bool containsStream(Stream stream) {
     return _query.contains("{" + stream.name + "}");
   }
@@ -224,16 +269,15 @@ class StreamsModel extends ChangeNotifier {
   }
 
   Stream? _fromName(String name) {
-    for (var i = 0; i < _streams.length; i++) {
-      if (_streams[i].name == name) {
-        return _streams[i];
+    for (var s in _streams) {
+      if (s.name == name) {
+        return s;
       }
     }
     return null;
   }
 
   List<Stream> fromMetaOrQuery(String metaOrQuery) {
-    log("fromMetaOrQuery: $metaOrQuery");
     RegExp r = new RegExp(
       r"\{[^\{\}]+}",
       caseSensitive: false,

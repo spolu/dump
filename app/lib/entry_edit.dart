@@ -17,16 +17,16 @@ class EntryEdit extends StatefulWidget {
 }
 
 class _EntryEditState extends State<EntryEdit> {
-  final _title_controller = TextEditingController();
-  final _meta_controller = TextEditingController();
-  final _body_controller = TextEditingController();
+  final _titleController = TextEditingController();
+  final _metaController = TextEditingController();
+  final _bodyController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _title_controller.text = widget.entry.title;
-    _meta_controller.text = widget.entry.meta;
-    _body_controller.text = widget.entry.body;
+    _titleController.text = widget.entry.title;
+    _metaController.text = widget.entry.meta;
+    _bodyController.text = widget.entry.body;
   }
 
   @override
@@ -34,19 +34,19 @@ class _EntryEditState extends State<EntryEdit> {
     this.widget.onUpdate(Entry(
         id: this.widget.entry.id,
         created: this.widget.entry.created,
-        title: _title_controller.text,
-        meta: _meta_controller.text,
-        body: _body_controller.text));
-    _title_controller.dispose();
-    _meta_controller.dispose();
-    _body_controller.dispose();
+        title: _titleController.text,
+        meta: _metaController.text,
+        body: _bodyController.text));
+    _titleController.dispose();
+    _metaController.dispose();
+    _bodyController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-        elevation: 2,
+        elevation: 0,
         insetAnimationDuration: Duration(milliseconds: 0),
         insetAnimationCurve: Curves.linear,
         insetPadding: EdgeInsets.all(50.0),
@@ -75,13 +75,13 @@ class _EntryEditState extends State<EntryEdit> {
                         // decoration: new BoxDecoration(color: Colors.green),
                         child: TextField(
                           autofocus: true,
-                          controller: _title_controller,
+                          controller: _titleController,
                           keyboardType: TextInputType.text,
                           decoration: const InputDecoration(
                             isDense: true,
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10.0, horizontal: 7.0),
+                            contentPadding: const EdgeInsets.only(
+                                top: 10.0, bottom: 7.0, left: 7.0, right: 7.0),
                           ),
                           style: TextStyle(
                             height: 1.0,
@@ -95,6 +95,7 @@ class _EntryEditState extends State<EntryEdit> {
                   ])),
               Container(
                   decoration: new BoxDecoration(color: Colors.transparent),
+                  padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
                   child: Row(children: [
                     SizedBox(
                       width: 20.0,
@@ -106,13 +107,13 @@ class _EntryEditState extends State<EntryEdit> {
                     ),
                     Expanded(
                       child: TextField(
-                        controller: _meta_controller,
+                        controller: _metaController,
                         keyboardType: TextInputType.text,
                         decoration: const InputDecoration(
                           isDense: true,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.only(
-                              top: 10.0, bottom: 10.0, left: 6.0, right: 7.0),
+                              top: 10.0, bottom: 10.0, left: 7.0, right: 7.0),
                         ),
                         style: GoogleFonts.sourceCodePro(
                             height: 1.0,
@@ -139,7 +140,7 @@ class _EntryEditState extends State<EntryEdit> {
                         ),
                         Expanded(
                           child: TextField(
-                            controller: _body_controller,
+                            controller: _bodyController,
                             keyboardType: TextInputType.multiline,
                             maxLines: null,
                             minLines: 8,
