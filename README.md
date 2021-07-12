@@ -10,7 +10,15 @@
 
 Follow Flutter's [Install Instructions](https://flutter.dev/docs/get-started/install)
 
-#### Install Rust
+Switch to the `dev` channel and enable `MacOS` with:
+
+```bash
+flutter channel dev
+sudo gem install cocoapods
+flutter config --enable-macos-desktop
+```
+
+### Install Rust
 
 Follow Rust's [Install Instructions](https://www.rust-lang.org/tools/install)
 
@@ -24,7 +32,7 @@ cd dump
 ### Build MacOS app
 
 ```bash
-cd app && flutter build macos && cd ..
+cd app && flutter build macos --release && cd ..
 ```
 
 ### Build the Rust Backend Binary
@@ -42,6 +50,7 @@ RUST_LOG=info ./srv/target/release/srv
 ```
 
 Start the MacOS app:
+
 ```bash
 open ./app/build/macos/Build/Products/Release/Dump.app
 ```
