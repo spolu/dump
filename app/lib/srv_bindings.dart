@@ -43,6 +43,84 @@ class NativeLibrary {
       _lookup<ffi.NativeFunction<_c_list_entries_ffi>>('list_entries_ffi');
   late final _dart_list_entries_ffi _list_entries_ffi =
       _list_entries_ffi_ptr.asFunction<_dart_list_entries_ffi>();
+
+  ffi.Pointer<ffi.Int8> create_entry_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _create_entry_ffi(
+      request,
+    );
+  }
+
+  late final _create_entry_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_create_entry_ffi>>('create_entry_ffi');
+  late final _dart_create_entry_ffi _create_entry_ffi =
+      _create_entry_ffi_ptr.asFunction<_dart_create_entry_ffi>();
+
+  ffi.Pointer<ffi.Int8> update_entry_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _update_entry_ffi(
+      request,
+    );
+  }
+
+  late final _update_entry_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_update_entry_ffi>>('update_entry_ffi');
+  late final _dart_update_entry_ffi _update_entry_ffi =
+      _update_entry_ffi_ptr.asFunction<_dart_update_entry_ffi>();
+
+  ffi.Pointer<ffi.Int8> delete_entry_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _delete_entry_ffi(
+      request,
+    );
+  }
+
+  late final _delete_entry_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_delete_entry_ffi>>('delete_entry_ffi');
+  late final _dart_delete_entry_ffi _delete_entry_ffi =
+      _delete_entry_ffi_ptr.asFunction<_dart_delete_entry_ffi>();
+
+  ffi.Pointer<ffi.Int8> list_streams_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _list_streams_ffi(
+      request,
+    );
+  }
+
+  late final _list_streams_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_list_streams_ffi>>('list_streams_ffi');
+  late final _dart_list_streams_ffi _list_streams_ffi =
+      _list_streams_ffi_ptr.asFunction<_dart_list_streams_ffi>();
+
+  ffi.Pointer<ffi.Int8> delete_stream_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _delete_stream_ffi(
+      request,
+    );
+  }
+
+  late final _delete_stream_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_delete_stream_ffi>>('delete_stream_ffi');
+  late final _dart_delete_stream_ffi _delete_stream_ffi =
+      _delete_stream_ffi_ptr.asFunction<_dart_delete_stream_ffi>();
+
+  ffi.Pointer<ffi.Int8> update_stream_ffi(
+    ffi.Pointer<ffi.Int8> request,
+  ) {
+    return _update_stream_ffi(
+      request,
+    );
+  }
+
+  late final _update_stream_ffi_ptr =
+      _lookup<ffi.NativeFunction<_c_update_stream_ffi>>('update_stream_ffi');
+  late final _dart_update_stream_ffi _update_stream_ffi =
+      _update_stream_ffi_ptr.asFunction<_dart_update_stream_ffi>();
 }
 
 typedef _c_response_free_ffi = ffi.Void Function(
@@ -58,5 +136,53 @@ typedef _c_list_entries_ffi = ffi.Pointer<ffi.Int8> Function(
 );
 
 typedef _dart_list_entries_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_create_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_create_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_update_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_update_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_delete_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_delete_entry_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_list_streams_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_list_streams_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_delete_stream_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_delete_stream_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _c_update_stream_ffi = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> request,
+);
+
+typedef _dart_update_stream_ffi = ffi.Pointer<ffi.Int8> Function(
   ffi.Pointer<ffi.Int8> request,
 );
