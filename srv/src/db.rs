@@ -55,10 +55,14 @@ impl DB {
         let db = sled::open(path)?;
         let entries = db.open_tree("entries")?;
         let streams = db.open_tree("streams")?;
-        Ok(DB { entries, streams })
+
+        let d = DB { entries, streams };
+        d.init()?;
+
+        Ok(d)
     }
 
-    pub fn init(&self) -> Result<()> {
+    fn init(&self) -> Result<()> {
         // Insert `{Inbox}` with special ID `_stream_id_[0-inbox]__`.
         let s = Stream {
             id: String::from("0-inbox"),
