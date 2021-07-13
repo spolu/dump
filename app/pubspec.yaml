@@ -34,6 +34,13 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  ffigen: ^3.0.0
+
+ffigen:
+  output: 'lib/srv_bindings.dart'
+  headers:
+    entry-points:
+      - '../srv/target/bindings.h'
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -6,7 +6,45 @@ import 'package:app/journal.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'dart:ffi';
+import 'dart:convert';
+import 'package:path/path.dart' as p;
+import 'package:ffi/ffi.dart';
+import 'dart:io';
+import 'dart:developer';
+
+import 'package:app/srv_bindings.dart' as srv;
+
+final s = srv.NativeLibrary(DynamicLibrary.open(_getPath()));
+
+String _getPath() {
+  final localPath = Directory.current.absolute.path;
+  var path = p.join(localPath, 'macos/libsrv.dylib');
+  return path;
+}
+
+class ListOptions {
+  const ListOptions({
+    required this.query,
+    required this.offset,
+    required this.limit,
+  });
+  final String query;
+  final int offset;
+  final int limit;
+}
+
 void main() {
+  final req = jsonEncode(<String, dynamic>{
+    'query': '{Inbox}',
+    'offset': 0,
+    'limit': 10,
+  });
+
+  final tt = s.list_entries_ffi(req.toNativeUtf8().cast());
+  final ss = tt.cast<Utf8>().toDartString();
+  log('TT: $tt');
+  log('SS: $ss');
   runApp(DumpApp());
 }
 
