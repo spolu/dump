@@ -286,39 +286,39 @@ class _EntryLogState extends State<EntryLog> {
   Widget build(BuildContext context) {
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
-        nextEntryKeySet: nextEntryIntent(),
-        nextEntryKeySetDown: nextEntryIntent(),
-        prevEntryKeySet: prevEntryIntent(),
-        prevEntryKeySetUp: prevEntryIntent(),
-        createEntryKeySet: createEntryIntent(),
-        deleteEntryKeySet: deleteEntryIntent(),
-        searchKeySet: searchIntent(),
+        nextEntryKeySet: NextEntryIntent(),
+        nextEntryKeySetDown: NextEntryIntent(),
+        prevEntryKeySet: PrevEntryIntent(),
+        prevEntryKeySetUp: PrevEntryIntent(),
+        createEntryKeySet: CreateEntryIntent(),
+        deleteEntryKeySet: DeleteEntryIntent(),
+        searchKeySet: SearchIntent(),
       },
       child: Actions(
         actions: {
-          prevEntryIntent: CallbackAction(onInvoke: (e) {
+          PrevEntryIntent: CallbackAction(onInvoke: (e) {
             setState(() {
               if (_selected > 0) {
                 _selected -= 1;
               }
             });
           }),
-          nextEntryIntent: CallbackAction(onInvoke: (e) {
+          NextEntryIntent: CallbackAction(onInvoke: (e) {
             setState(() {
               if (_selected < _entries.length - 1) {
                 _selected += 1;
               }
             });
           }),
-          createEntryIntent: CallbackAction(onInvoke: (e) {
+          CreateEntryIntent: CallbackAction(onInvoke: (e) {
             _createEntry(context);
           }),
-          deleteEntryIntent: CallbackAction(onInvoke: (e) {
+          DeleteEntryIntent: CallbackAction(onInvoke: (e) {
             _entries[_selected].delete().then((entry) {
               _refresh(false);
             });
           }),
-          searchIntent: CallbackAction(onInvoke: (e) {
+          SearchIntent: CallbackAction(onInvoke: (e) {
             setState(() {
               _selected = -1;
             });
@@ -374,36 +374,36 @@ class SearchBox extends StatefulWidget {
 }
 
 class _SearchBoxState extends State<SearchBox> {
-  final _search_controller = TextEditingController();
+  final _searchController = TextEditingController();
 
   void _handleTextControllerUpdate() {
-    scheduleMicrotask(() => widget.onUpdate(_search_controller.text));
+    scheduleMicrotask(() => widget.onUpdate(_searchController.text));
   }
 
   @override
   void initState() {
     super.initState();
-    _search_controller.text = widget.searchQuery;
-    _search_controller.addListener(_handleTextControllerUpdate);
+    _searchController.text = widget.searchQuery;
+    _searchController.addListener(_handleTextControllerUpdate);
   }
 
   @override
   void dispose() {
-    _search_controller.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(SearchBox oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != _search_controller.text) {
-      _search_controller.removeListener(_handleTextControllerUpdate);
-      _search_controller.text = widget.searchQuery;
-      _search_controller.addListener(_handleTextControllerUpdate);
+    if (widget.searchQuery != _searchController.text) {
+      _searchController.removeListener(_handleTextControllerUpdate);
+      _searchController.text = widget.searchQuery;
+      _searchController.addListener(_handleTextControllerUpdate);
       if (!this.widget.searchFocusNode.hasFocus) {
         this.widget.searchFocusNode.requestFocus();
-        _search_controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _search_controller.text.length));
+        _searchController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _searchController.text.length));
       }
     }
   }
@@ -434,7 +434,7 @@ class _SearchBoxState extends State<SearchBox> {
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
               ),
-              controller: _search_controller,
+              controller: _searchController,
               style: TextStyle(
                   fontSize: 13.0,
                   fontWeight: FontWeight.w900,

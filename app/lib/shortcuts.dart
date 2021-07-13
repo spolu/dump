@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class nextEntryIntent extends Intent {}
+class NextEntryIntent extends Intent {}
 
 final nextEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyJ,
@@ -10,7 +10,7 @@ final nextEntryKeySetDown = LogicalKeySet(
   LogicalKeyboardKey.arrowDown,
 );
 
-class prevEntryIntent extends Intent {}
+class PrevEntryIntent extends Intent {}
 
 final prevEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyK,
@@ -19,19 +19,19 @@ final prevEntryKeySetUp = LogicalKeySet(
   LogicalKeyboardKey.arrowUp,
 );
 
-class createEntryIntent extends Intent {}
+class CreateEntryIntent extends Intent {}
 
 final createEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyC,
 );
 
-class deleteEntryIntent extends Intent {}
+class DeleteEntryIntent extends Intent {}
 
 final deleteEntryKeySet = LogicalKeySet(
   LogicalKeyboardKey.keyD,
 );
 
-class searchIntent extends Intent {}
+class SearchIntent extends Intent {}
 
 final searchKeySet = LogicalKeySet(
   LogicalKeyboardKey.slash,
