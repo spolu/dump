@@ -10,14 +10,14 @@ import 'package:app/srv_bindings.dart' as srv;
 
 import 'package:ffi/ffi.dart';
 
-final s = srv.NativeLibrary(DynamicLibrary.open(_getPath()));
+final s = srv.NativeLibrary(DynamicLibrary.open('libsrv.dylib'));
 
-String _getPath() {
-  // see https://github.com/dart-lang/ffigen/blob/master/example/c_json/main.dart#L48
-  final localPath = Directory.current.absolute.path;
-  var path = p.join(localPath, 'macos/libsrv.dylib');
-  return path;
-}
+// String _getPath() {
+//   // see https://github.com/dart-lang/ffigen/blob/master/example/c_json/main.dart#L48
+//   final localPath = Directory.current.absolute.path;
+//   var path = p.join(localPath, 'macos/libsrv.dylib');
+//   return path;
+// }
 
 class ListOptions {
   const ListOptions({
