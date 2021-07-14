@@ -8,7 +8,7 @@
 PRODUCT_NAME = Dump
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.app
+PRODUCT_BUNDLE_IDENTIFIER = com.or1g1n.dump
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2021 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2021 Stanislas Polu. All rights reserved.

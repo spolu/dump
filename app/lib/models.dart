@@ -88,6 +88,7 @@ class Entry {
   Future<Entry> delete() async {
     final req = jsonEncode(<String, dynamic>{
       'id': id,
+      'created': created,
       'title': title == '' ? "(empty)" : title,
       'meta': meta,
       'body': body,

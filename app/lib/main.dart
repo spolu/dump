@@ -6,7 +6,15 @@ import 'package:app/journal.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'dart:developer';
+import 'dart:io';
+
 void main() {
+  // print env variable HOME
+  var home = Platform.environment['HOME'];
+  if (home != null) {
+    log(home);
+  }
   runApp(DumpApp());
 }
 
