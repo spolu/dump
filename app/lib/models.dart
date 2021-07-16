@@ -10,7 +10,9 @@ import 'package:app/srv_bindings.dart' as srv;
 
 import 'package:ffi/ffi.dart';
 
-final s = srv.NativeLibrary(DynamicLibrary.open('libsrv.dylib'));
+final s = Platform.isMacOS
+    ? srv.NativeLibrary(DynamicLibrary.open('libsrv.dylib'))
+    : srv.NativeLibrary(DynamicLibrary.executable());
 
 // String _getPath() {
 //   // see https://github.com/dart-lang/ffigen/blob/master/example/c_json/main.dart#L48
