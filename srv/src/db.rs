@@ -1,5 +1,5 @@
 use crate::models::{Entry, Stream};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use bincode::{deserialize, serialize};
 use lazy_static::lazy_static;
 use nanoid::nanoid;
@@ -22,30 +22,6 @@ pub fn extract_stream_names(s: &String) -> Vec<String> {
             r[1..r.len() - 1].to_string()
         })
         .collect::<Vec<_>>()
-}
-
-pub fn extract_stream_ids(s: &String) -> Vec<String> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"_stream_id_\[[^\{\[\]\}]+\]__").unwrap();
-    }
-    RE.captures_iter(s)
-        .map(|c| {
-            let r = String::from(&c[0]);
-            r[12..r.len() - 3].to_string()
-        })
-        .collect::<Vec<_>>()
-}
-
-pub fn match_meta(query_streams: &Vec<Stream>, entry: &Entry) -> bool {
-    let stream_ids = extract_stream_ids(&entry.meta);
-    let mut m = true;
-    for qs in query_streams {
-        if !m {
-            break;
-        }
-        m = stream_ids.iter().any(|id| *id == qs.id);
-    }
-    m
 }
 
 pub fn clean_stream_names(query: &String) -> String {
@@ -148,21 +124,6 @@ impl DB {
         }
     }
 
-    fn stream_by_id(&self, id: &String) -> Result<Stream> {
-        match self.streams.iter().find_map(|x| {
-            // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
-            let s: Stream = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
-            if s.id == id.clone() {
-                Some(s)
-            } else {
-                None
-            }
-        }) {
-            None => Err(anyhow!("Unknown Stream: id={}", id))?,
-            Some(s) => Ok(s),
-        }
-    }
-
     fn streams_from_query(&self, query: &String) -> Result<Vec<Stream>> {
         let stream_names = extract_stream_names(query);
         let streams = stream_names
@@ -197,14 +158,64 @@ impl DB {
         Ok(m)
     }
 
+    pub fn extract_streams_from_meta(&self, s: &String, parent_streams: bool) -> Vec<Stream> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"_stream_id_\[[^\{\[\]\}]+\]__").unwrap();
+        }
+        let stream_ids = RE
+            .captures_iter(s)
+            .map(|c| {
+                let r = String::from(&c[0]);
+                r[12..r.len() - 3].to_string()
+            })
+            .collect::<Vec<_>>();
+
+        // First iterate on all sreams to match them by id from the ids extracted from `meta`.
+        let streams = self
+            .streams
+            .iter()
+            .filter_map(|x| {
+                // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
+                let s: Stream = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
+                if stream_ids.iter().any(|id| s.id == *id) {
+                    Some(s)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if parent_streams {
+            // If `parent_streams` is true, re-iterate on streams a second time and match streams
+            // whose names are parents of the streams extracted previously.
+            let mut parent_streams = self.streams
+                .iter()
+                .filter_map(|x| {
+                    // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
+                    let sp: Stream = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
+                    if streams
+                        .iter()
+                        .any(|s| s.parent_names().iter().any(|n| sp.name == *n))
+                    {
+                        Some(sp)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+                parent_streams.sort_unstable();
+                parent_streams.dedup();
+                parent_streams
+        } else {
+            // Otherwise return the `streams` directly.
+            streams
+        }
+    }
+
     /// `postprocess_meta` extracts the streams ids from the `meta` string provided
     /// (`_stream_id_[StreamID]__`), and replace them with their name (`{StreamName}`).
     fn postprocess_meta(&self, meta: &String) -> Result<String> {
-        let stream_ids = extract_stream_ids(meta);
-        let streams = stream_ids
-            .iter()
-            .map(|si| self.stream_by_id(si))
-            .collect::<Result<Vec<_>>>()?;
+        let streams = self.extract_streams_from_meta(meta, false);
 
         let mut m = meta.clone();
         streams.iter().for_each(|s| {
@@ -215,6 +226,23 @@ impl DB {
         });
         // tracing::debug!(meta = m.as_str(), "postprocess_meta");
         Ok(m)
+    }
+
+    pub fn match_meta(
+        &self,
+        query_streams: &Vec<Stream>,
+        entry: &Entry,
+        parent_streams: bool,
+    ) -> bool {
+        let streams = self.extract_streams_from_meta(&entry.meta, parent_streams);
+        let mut m = true;
+        for qs in query_streams {
+            if !m {
+                break;
+            }
+            m = streams.iter().any(|s| s.id == qs.id);
+        }
+        m
     }
 
     pub fn create_entry(&self, create: &Entry) -> Result<Entry> {
@@ -287,7 +315,7 @@ impl DB {
             .filter_map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let mut e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
-                if match_meta(&query_streams, &e)
+                if self.match_meta(&query_streams, &e, true)
                     && (match_title(&query, &e) || match_body(&query, &e))
                 {
                     e.meta = self.postprocess_meta(&e.meta).unwrap();
@@ -362,7 +390,7 @@ impl DB {
             .filter_map(|x| {
                 // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
                 let mut e: Entry = deserialize(&x.clone().unwrap().1.to_owned()).unwrap();
-                if match_meta(&streams, &e) {
+                if self.match_meta(&streams, &e, false) {
                     e.meta = e
                         .meta
                         .replace(format!("_stream_id_[{}]__", id.as_str()).as_str(), "");

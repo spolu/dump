@@ -23,21 +23,42 @@ pub struct Stream {
     pub name: String,
 }
 
+impl Stream {
+    pub fn parent_names(&self) -> Vec<String> {
+        let mut parents: Vec<String> = vec![];
+        let components = self.name.split("/").collect::<Vec<_>>();
+        for c in 0..components.len() {
+            parents.push(String::from(&components[0..=c].join("/")))
+        }
+        parents
+    }
+}
+
 impl PartialEq for Stream {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
+impl Ord for Stream {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.name == "Inbox" {
+            if other.name == "Inbox" {
+                Ordering::Equal
+            } else {
+                Ordering::Less
+            }
+        } else if other.name == "Inbox" {
+            Ordering::Greater
+        } else {
+            self.name.cmp(&other.name)
+        }
+    }
+}
+
 impl PartialOrd for Stream {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.name == "Inbox" {
-            Some(Ordering::Less)
-        } else if other.name == "Inbox" {
-            Some(Ordering::Greater)
-        } else {
-            self.name.partial_cmp(&other.name)
-        }
+        Some(self.cmp(other))
     }
 }
 
@@ -52,4 +73,42 @@ pub struct ListOptions {
     pub query: Option<String>,
     pub offset: Option<usize>,
     pub limit: Option<usize>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stream_parent_names() {
+        let s = Stream {
+            id: String::from("foo"),
+            name: String::from("Foo/Bar"),
+        };
+        assert_eq!(vec!["Foo", "Foo/Bar"], s.parent_names());
+
+        let s = Stream {
+            id: String::from("foo"),
+            name: String::from("Foo"),
+        };
+        assert_eq!(vec!["Foo"], s.parent_names());
+
+        let s = Stream {
+            id: String::from("foo"),
+            name: String::from("Foo/Bar/Acme"),
+        };
+        assert_eq!(vec!["Foo", "Foo/Bar", "Foo/Bar/Acme"], s.parent_names());
+
+        let s = Stream {
+            id: String::from("foo"),
+            name: String::from("Foo/"),
+        };
+        assert_eq!(vec!["Foo", "Foo/"], s.parent_names());
+
+        let s = Stream {
+            id: String::from("foo"),
+            name: String::from("/Foo/"),
+        };
+        assert_eq!(vec!["", "/Foo", "/Foo/"], s.parent_names());
+    }
 }
