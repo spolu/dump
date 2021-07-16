@@ -2,7 +2,28 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
+import 'package:path/path.dart' as p;
+import 'dart:ffi';
+import 'dart:io';
+import 'package:app/srv_bindings.dart' as srv;
+
+import 'package:ffi/ffi.dart';
+
+final s = Platform.isMacOS
+    ? srv.NativeLibrary(DynamicLibrary.open('libsrv.dylib'))
+    : srv.NativeLibrary(DynamicLibrary.executable());
+
+class ListOptions {
+  const ListOptions({
+    required this.query,
+    required this.offset,
+    required this.limit,
+  });
+  final String query;
+  final int offset;
+  final int limit;
+}
 
 class Entry {
   const Entry({
@@ -45,62 +66,48 @@ class Entry {
   }
 
   Future<Entry> update() async {
-    final response = await http.put(
-      Uri.parse(
-        'http://127.0.0.1:13371/entries/$id',
-      ),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'id': id,
-        'title': title == '' ? "(empty)" : title,
-        'meta': meta,
-        'body': body,
-      }),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'id': id,
+      'title': title == '' ? "(empty)" : title,
+      'meta': meta,
+      'body': body,
+    });
 
-    if (response.statusCode == 200) {
-      return Entry.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to update entry');
-    }
+    final ptr = s.update_entry_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    return Entry.fromJson(json.decode(data));
   }
 
   Future<Entry> delete() async {
-    final response = await http.delete(
-      Uri.parse(
-        'http://127.0.0.1:13371/entries/$id',
-      ),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'id': id,
+      'created': created,
+      'title': title == '' ? "(empty)" : title,
+      'meta': meta,
+      'body': body,
+    });
 
-    if (response.statusCode == 200) {
-      return this;
-    } else {
-      throw Exception('Failed to create entry');
-    }
+    final ptr = s.delete_entry_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    return Entry.fromJson(json.decode(data));
   }
 
   static Future<Entry> create(List<Stream> streams) async {
-    final response = await http.post(
-      Uri.parse(
-        'http://127.0.0.1:13371/entries',
-      ),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'title': '',
-        'meta': streams.map((stream) => "{" + stream.name + "}").join(' '),
-        'body': '',
-      }),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'title': '',
+      'meta': streams.map((stream) => "{" + stream.name + "}").join(' '),
+      'body': ''
+    });
 
-    if (response.statusCode == 200) {
-      return Entry.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create entry');
-    }
+    final ptr = s.create_entry_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    return Entry.fromJson(json.decode(data));
   }
 }
 
@@ -116,23 +123,24 @@ class EntryList {
   final int total;
 
   static Future<EntryList> fetch(int offset, int limit, String query) async {
-    final response = await http.get(
-      Uri.parse(
-          'http://127.0.0.1:13371/entries?offset=$offset&limit=$limit&query=$query'),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'query': query,
+      'offset': offset,
+      'limit': limit,
+    });
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return EntryList(
-        entries: (json['entries'] as List)
-            .map((entry) => Entry.fromJson(entry))
-            .toList(),
-        offset: json['offset'],
-        total: json['total'],
-      );
-    } else {
-      throw Exception('Failed to load entries');
-    }
+    final ptr = s.list_entries_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    final json = jsonDecode(data);
+    return EntryList(
+      entries: (json['entries'] as List)
+          .map((entry) => Entry.fromJson(entry))
+          .toList(),
+      offset: json['offset'],
+      total: json['total'],
+    );
   }
 }
 
@@ -146,38 +154,29 @@ class Stream {
   }
 
   Future<Stream> update() async {
-    final response = await http.put(
-      Uri.parse(
-        'http://127.0.0.1:13371/streams/$id',
-      ),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'id': id,
-        'name': name,
-      }),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'id': id,
+      'name': name,
+    });
 
-    if (response.statusCode == 200) {
-      return Stream.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to update stream');
-    }
+    final ptr = s.update_stream_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    return Stream.fromJson(json.decode(data));
   }
 
   Future<Stream> delete() async {
-    final response = await http.delete(
-      Uri.parse(
-        'http://127.0.0.1:13371/streams/$id',
-      ),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'id': id,
+      'name': name,
+    });
 
-    if (response.statusCode == 200) {
-      return this;
-    } else {
-      throw Exception('Failed to create entry');
-    }
+    final ptr = s.delete_stream_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    return Stream.fromJson(json.decode(data));
   }
 }
 
@@ -191,21 +190,23 @@ class StreamList {
   final int total;
 
   static Future<StreamList> fetch() async {
-    final response = await http.get(
-      Uri.parse('http://127.0.0.1:13371/streams'),
-    );
+    final req = jsonEncode(<String, dynamic>{
+      'query': '',
+      'offset': 0,
+      'limit': 999,
+    });
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return StreamList(
-        streams: (json['streams'] as List)
-            .map((entry) => Stream.fromJson(entry))
-            .toList(),
-        total: json['total'],
-      );
-    } else {
-      throw Exception('Failed to load streams');
-    }
+    final ptr = s.list_streams_ffi(req.toNativeUtf8().cast());
+    final data = ptr.cast<Utf8>().toDartString();
+    s.response_free_ffi(ptr);
+
+    final json = jsonDecode(data);
+    return StreamList(
+      streams: (json['streams'] as List)
+          .map((entry) => Stream.fromJson(entry))
+          .toList(),
+      total: json['total'],
+    );
   }
 }
 

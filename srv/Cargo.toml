@@ -3,9 +3,9 @@ name = "srv"
 version = "0.0.1"
 edition = "2018"
 
-[[bin]]
+[lib]
 name = "srv"
-path = "bin/srv.rs"
+crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
 tokio = { version = "1.0.2", features = ["full"] }
@@ -27,3 +27,7 @@ serde = { version = "1.0.120", features = ["rc", "derive"] }
 nanoid = "0.4.0"
 shellexpand = "2.1.0"
 lazy_static = "1.4.0"
+
+[build-dependencies]
+cbindgen = "0.19"
+dart-bindgen = "0.1.8"

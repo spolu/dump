@@ -70,9 +70,14 @@ pub struct StreamList {
 
 #[derive(Debug, Deserialize)]
 pub struct ListOptions {
-    pub query: Option<String>,
-    pub offset: Option<usize>,
-    pub limit: Option<usize>,
+    pub query: String,
+    pub offset: usize,
+    pub limit: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ErrorResponse {
+    pub error: String,
 }
 
 #[cfg(test)]
