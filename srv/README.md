@@ -2,8 +2,7 @@
 
 ```
 cargo build --release
-cargo lipo --targets x86_64-apple-ios --release   # iOS Simulator
-cargo lipo --targets aarch64-apple-ios --release  # iOS
+cargo lipo --targets x86_64-apple-ios,aarch64-apple-ios --release
 cbindgen ./src/lib.rs -c cbindgen.toml | grep -v \#include | uniq > target/bindings.h
 ```
 

@@ -229,6 +229,7 @@ class StreamItem extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(stream.name,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.left,
                       style: TextStyle(
                         fontSize: 13.0,
@@ -323,6 +324,19 @@ class Menu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isHandset = MediaQuery.of(context).size.width < 600;
+    return Container(
+      decoration: new BoxDecoration(
+        color: Theme.of(context).colorScheme.background,
+      ),
+      child: Column(
+          children: isHandset
+              ? _buildHandsetChildren(context)
+              : _buildNormalChildren(context)),
+    );
+  }
+
+  List<Widget> _buildNormalChildren(BuildContext context) {
     final streams = List<Widget>.from(this.streams.map((Stream stream) {
       return Consumer<SearchQueryModel>(
           builder: (context, searchQuery, child) => StreamItem(
@@ -335,16 +349,46 @@ class Menu extends StatelessWidget {
                 searchQuery.streamSelect(stream);
               }));
     }));
-    return Container(
-      decoration: new BoxDecoration(
-        color: Theme.of(context).colorScheme.background,
-      ),
-      child: Column(children: [
-        Expanded(
-            child: ListView(
-                padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
-                children: streams)),
-      ]),
+
+    return [
+      Expanded(
+          child: ListView(
+              padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+              children: streams)),
+    ];
+  }
+
+  List<Widget> _buildHandsetChildren(BuildContext context) {
+    var children = _buildNormalChildren(context);
+    children.insert(
+      0,
+      SizedBox(height: 44.0),
     );
+    children.insert(
+        1,
+        Row(
+          children: [
+            SizedBox(width: 20.0),
+            Container(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.only(bottom: 1.0),
+                    child: Icon(
+                      Icons.list,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(),
+            ),
+          ],
+        ));
+    return children;
   }
 }

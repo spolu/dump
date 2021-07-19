@@ -45,19 +45,21 @@ class _EntryEditState extends State<EntryEdit> {
 
   @override
   Widget build(BuildContext context) {
+    bool isHandset = MediaQuery.of(context).size.width < 600;
     return Dialog(
         elevation: 0,
         insetAnimationDuration: Duration(milliseconds: 0),
         insetAnimationCurve: Curves.linear,
-        insetPadding: EdgeInsets.all(50.0),
+        insetPadding: isHandset ? EdgeInsets.all(0.0) : EdgeInsets.all(70.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(2.0),
         ),
         child: Container(
-          width: 800,
-          height: 400,
+          // width: 800,
+          // height: 400,
           child: Column(
             children: <Widget>[
+              isHandset ? SizedBox(height: 20.0) : SizedBox(height: 0.0),
               Container(
                   // decoration: new BoxDecoration(color: Colors.blue),
                   padding: EdgeInsets.only(top: 20.0),

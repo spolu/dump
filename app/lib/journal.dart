@@ -94,16 +94,18 @@ class _EntryItemState extends State<EntryItem> {
               SizedBox(
                 width: 10.0,
               ),
-              Text(this.widget.entry.title,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontSize: 13.0,
-                    fontWeight: FontWeight.w800,
-                    color: _focusNode.hasFocus
-                        ? Colors.purple[800]
-                        : Theme.of(context).colorScheme.onBackground,
-                  )),
+              Expanded(
+                child: Text(this.widget.entry.title,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w800,
+                      color: _focusNode.hasFocus
+                          ? Colors.purple[800]
+                          : Theme.of(context).colorScheme.onBackground,
+                    )),
+              ),
               SizedBox(
                 width: 5.0,
               ),
@@ -131,17 +133,17 @@ class _EntryItemState extends State<EntryItem> {
               SizedBox(
                 width: 5.0,
               ),
-              Expanded(
-                // child: Text(this.widget.entry.body.replaceAll('\n', ' '),
-                child: Text('',
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontSize: 13.0,
-                      fontWeight: FontWeight.w200,
-                      color: Colors.grey,
-                    )),
-              ),
+              // Expanded(
+              //   // child: Text(this.widget.entry.body.replaceAll('\n', ' '),
+              //   child: Text('',
+              //       overflow: TextOverflow.ellipsis,
+              //       textAlign: TextAlign.left,
+              //       style: TextStyle(
+              //         fontSize: 13.0,
+              //         fontWeight: FontWeight.w200,
+              //         color: Colors.grey,
+              //       )),
+              // ),
               SizedBox(
                 width: 2.0,
               ),
@@ -362,11 +364,13 @@ class SearchBox extends StatefulWidget {
   SearchBox(
       {required this.searchQuery,
       required this.onUpdate,
+      required this.onMenu,
       required this.searchFocusNode})
       : super();
 
   final String searchQuery;
   final Function(String) onUpdate;
+  final Function() onMenu;
   final FocusNode searchFocusNode;
 
   @override
@@ -410,45 +414,83 @@ class _SearchBoxState extends State<SearchBox> {
 
   @override
   Widget build(BuildContext context) {
+    bool isHandset = MediaQuery.of(context).size.width < 600;
     // create a search box with a search icon on the left and round corners
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(10),
       ),
       margin: EdgeInsets.all(10),
       child: Row(
-        children: [
-          Icon(
-            Icons.search,
-            size: 18,
-          ),
-          Expanded(
-            child: TextField(
-              autofocus: true,
-              focusNode: this.widget.searchFocusNode,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
-              ),
-              controller: _searchController,
-              style: TextStyle(
-                  fontSize: 13.0,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.grey),
-            ),
-          ),
-        ],
+        children: isHandset
+            ? _buildHandsetChildren(context)
+            : _buildNormalChildren(context),
       ),
     );
+  }
+
+  List<Widget> _buildNormalChildren(BuildContext context) {
+    return [
+      Container(
+        padding: const EdgeInsets.only(top: 2.0),
+        child: Icon(
+          Icons.search,
+          size: 18,
+        ),
+      ),
+      Expanded(
+        child: TextField(
+          autofocus: true,
+          focusNode: this.widget.searchFocusNode,
+          keyboardType: TextInputType.text,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
+          ),
+          controller: _searchController,
+          style: TextStyle(
+              fontSize: 13.0, fontWeight: FontWeight.w900, color: Colors.grey),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildHandsetChildren(BuildContext context) {
+    var children = _buildNormalChildren(context);
+    children.insert(
+      0,
+      MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => this.widget.onMenu(),
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 1.0),
+            child: Icon(
+              Icons.menu,
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+    children.insert(
+      1,
+      SizedBox(
+        width: 10.0,
+      ),
+    );
+    return children;
   }
 }
 
 class Journal extends StatefulWidget {
-  Journal() : super();
+  Journal({
+    required this.onMenu,
+  }) : super();
+
+  final Function() onMenu;
 
   @override
   _JournalState createState() => _JournalState();
@@ -481,6 +523,7 @@ class _JournalState extends State<Journal> {
             SearchBox(
               searchQuery: searchQuery.query(),
               searchFocusNode: _searchFocusNode,
+              onMenu: () => this.widget.onMenu(),
               onUpdate: (query) {
                 searchQuery.update(query);
               },

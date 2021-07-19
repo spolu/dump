@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 
-import 'package:path/path.dart' as p;
 import 'dart:ffi';
 import 'dart:io';
 import 'package:app/srv_bindings.dart' as srv;
