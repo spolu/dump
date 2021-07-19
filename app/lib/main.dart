@@ -2,10 +2,16 @@ import 'package:app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:app/menu.dart';
 import 'package:app/journal.dart';
+import 'package:app/login.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  // await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
   runApp(DumpApp());
 }
 
@@ -46,15 +52,26 @@ class DumpTop extends StatefulWidget {
   _DumpTopState createState() => _DumpTopState();
 }
 
+final FirebaseAuth _auth = FirebaseAuth.instance;
+
 class _DumpTopState extends State<DumpTop> {
+  User? user;
+
   @override
   void initState() {
+    user = null;
+    _auth.userChanges().listen((u) => setState(() => user = u));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     bool isHandset = MediaQuery.of(context).size.width < 600;
+    if (user == null) {
+      return Scaffold(
+        body: Login(),
+      );
+    }
     return isHandset ? _buildHandset(context) : _buildNormal(context);
   }
 

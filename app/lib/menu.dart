@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:app/models.dart';
 import 'package:hovering/hovering.dart';
-import 'dart:developer';
 
 class StreamDeleteDialog extends StatelessWidget {
   StreamDeleteDialog({

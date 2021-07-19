@@ -28,6 +28,9 @@ dependencies:
   intl: ^0.17.0
   provider: ^5.0.0
   hovering: ^1.0.4
+  firebase_core: ^1.4.0
+  firebase_auth: ^3.0.1
+  flutter_signin_button: ^2.0.0
   # desktop_window: ^0.4.0
   # cupertino_icons: ^1.0.2
   # flutter_markdown: ^0.6.2
