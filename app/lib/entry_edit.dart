@@ -7,10 +7,12 @@ class EntryEdit extends StatefulWidget {
   EntryEdit({
     required this.entry,
     required this.onUpdate,
+    required this.onDelete,
   }) : super(key: ObjectKey(entry.id));
 
   final Entry entry;
   final Function(Entry) onUpdate;
+  final Function(Entry) onDelete;
 
   @override
   _EntryEditState createState() => _EntryEditState();
@@ -20,6 +22,7 @@ class _EntryEditState extends State<EntryEdit> {
   final _titleController = TextEditingController();
   final _metaController = TextEditingController();
   final _bodyController = TextEditingController();
+  bool _deleted = false;
 
   @override
   void initState() {
@@ -31,12 +34,21 @@ class _EntryEditState extends State<EntryEdit> {
 
   @override
   void dispose() {
-    this.widget.onUpdate(Entry(
-        id: this.widget.entry.id,
-        created: this.widget.entry.created,
-        title: _titleController.text,
-        meta: _metaController.text,
-        body: _bodyController.text));
+    if (this._deleted) {
+      this.widget.onDelete(Entry(
+          id: this.widget.entry.id,
+          created: this.widget.entry.created,
+          title: _titleController.text,
+          meta: _metaController.text,
+          body: _bodyController.text));
+    } else {
+      this.widget.onUpdate(Entry(
+          id: this.widget.entry.id,
+          created: this.widget.entry.created,
+          title: _titleController.text,
+          meta: _metaController.text,
+          body: _bodyController.text));
+    }
     _titleController.dispose();
     _metaController.dispose();
     _bodyController.dispose();
@@ -67,10 +79,13 @@ class _EntryEditState extends State<EntryEdit> {
                     SizedBox(
                       width: 20.0,
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Color.fromRGBO(0, 0, 0, 0.2),
-                      size: 13.0,
+                    Container(
+                      padding: EdgeInsets.only(top: 1.0),
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: Color.fromRGBO(0, 0, 0, 0.2),
+                        size: 13.0,
+                      ),
                     ),
                     Expanded(
                       child: Container(
@@ -102,10 +117,13 @@ class _EntryEditState extends State<EntryEdit> {
                     SizedBox(
                       width: 20.0,
                     ),
-                    Icon(
-                      Icons.settings,
-                      color: Color.fromRGBO(0, 0, 0, 0.2),
-                      size: 13.0,
+                    Container(
+                      padding: EdgeInsets.only(bottom: 1.0),
+                      child: Icon(
+                        Icons.settings,
+                        color: Color.fromRGBO(0, 0, 0, 0.2),
+                        size: 13.0,
+                      ),
                     ),
                     Expanded(
                       child: TextField(
@@ -135,27 +153,32 @@ class _EntryEditState extends State<EntryEdit> {
                         SizedBox(
                           width: 20.0,
                         ),
-                        Icon(
-                          Icons.article,
-                          color: Color.fromRGBO(0, 0, 0, 0.15),
-                          size: 13.0,
+                        Container(
+                          child: Icon(
+                            Icons.article,
+                            color: Color.fromRGBO(0, 0, 0, 0.15),
+                            size: 13.0,
+                          ),
                         ),
                         Expanded(
-                          child: TextField(
-                            controller: _bodyController,
-                            keyboardType: TextInputType.multiline,
-                            maxLines: null,
-                            minLines: 8,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.only(
-                                  top: 2, bottom: 0, left: 8.0, right: 7.0),
+                          child: Container(
+                            padding: EdgeInsets.only(top: 1.0),
+                            child: TextField(
+                              controller: _bodyController,
+                              keyboardType: TextInputType.multiline,
+                              maxLines: null,
+                              minLines: 8,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.only(
+                                    top: 2, bottom: 0, left: 8.0, right: 7.0),
+                              ),
+                              style: TextStyle(
+                                  fontSize: 13.0,
+                                  fontWeight: FontWeight.w100,
+                                  color: Colors.black54),
                             ),
-                            style: TextStyle(
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w100,
-                                color: Colors.black54),
                           ),
                         ),
                       ]),
@@ -164,20 +187,84 @@ class _EntryEditState extends State<EntryEdit> {
               Container(
                 decoration: new BoxDecoration(color: Colors.transparent),
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
-                alignment: Alignment.centerRight,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    "Save",
-                    style: TextStyle(
-                      fontSize: 13.0,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
+                // alignment: Alignment.centerRight,
+                child: Row(children: [
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        this._deleted = true;
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        "Delete",
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.red,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(width: 10.0),
+                  Container(
+                    child: Entry.inboxInMeta(this._metaController.text)
+                        ? MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  this._metaController.text = _metaController
+                                      .text
+                                      .replaceAll(RegExp(" *\{Inbox\} *"), " ")
+                                      .trim();
+                                });
+                              },
+                              child: Text(
+                                "Archive",
+                                style: TextStyle(
+                                    fontSize: 13.0,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black54),
+                              ),
+                            ),
+                          )
+                        : MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  this._metaController.text =
+                                      ("{Inbox} " + _metaController.text)
+                                          .trim();
+                                });
+                              },
+                              child: Text(
+                                "Unarchive",
+                                style: TextStyle(
+                                    fontSize: 13.0,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black54),
+                              ),
+                            ),
+                          ),
+                  ),
+                  Expanded(child: Container()),
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    focusColor: Colors.green[50],
+                    child: Text(
+                      "Save",
+                      style: TextStyle(
+                        fontSize: 13.0,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ]),
               ),
             ],
           ),

@@ -73,7 +73,7 @@ pub extern "C" fn list_entries_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn create_entry(create: models::Entry) -> Result<models::Entry> {
-    let entry = DB.create_entry(&create).unwrap();
+    let entry = DB.create_entry(&create)?;
 
     tracing::debug!(
         id = entry.id.clone().unwrap().as_str(),
@@ -92,12 +92,17 @@ pub extern "C" fn create_entry_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn update_entry(update: models::Entry) -> Result<models::Entry> {
-    let mut entry = DB.get_entry(&update.id.unwrap()).unwrap().unwrap();
+    // If the entry does not exist anymore, re-create it as we don't want to loose data. It will
+    // get created with a new ID and creation date.
+    let mut entry = match DB.get_entry(update.id.as_ref().unwrap())? {
+        Some(e) => e,
+        None => DB.create_entry(&update)?,
+    };
     entry.title = update.title;
     entry.body = update.body;
     entry.meta = update.meta;
 
-    DB.insert_entry(&entry).unwrap();
+    DB.insert_entry(&entry)?;
 
     tracing::debug!(
         id = entry.id.clone().unwrap().as_str(),
@@ -116,9 +121,9 @@ pub extern "C" fn update_entry_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn delete_entry(delete: models::Entry) -> Result<models::Entry> {
-    DB.delete_entry(&delete.id.clone().unwrap()).unwrap();
+    DB.delete_entry(delete.id.as_ref().unwrap())?;
 
-    tracing::debug!(id = delete.id.clone().unwrap().as_str(), "delete_entry",);
+    tracing::debug!(id = delete.id.as_ref().unwrap().as_str(), "delete_entry",);
 
     Ok(delete)
 }
@@ -129,7 +134,7 @@ pub extern "C" fn delete_entry_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn list_streams(_options: models::ListOptions) -> Result<models::StreamList> {
-    let streams: Vec<models::Stream> = DB.list_streams().unwrap();
+    let streams: Vec<models::Stream> = DB.list_streams()?;
     let total = streams.len();
 
     tracing::debug!(total, "list_streams",);
@@ -143,7 +148,7 @@ pub extern "C" fn list_streams_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn delete_stream(delete: models::Stream) -> Result<models::Stream> {
-    DB.delete_stream(&delete.id).unwrap();
+    DB.delete_stream(&delete.id)?;
 
     tracing::debug!(id = delete.id.as_str(), "delete_stream",);
 
@@ -156,18 +161,23 @@ pub extern "C" fn delete_stream_ffi(request: *const raw::c_char) -> *mut raw::c_
 }
 
 fn update_stream(update: models::Stream) -> Result<models::Stream> {
-    let mut stream = DB.get_stream(&update.id).unwrap().unwrap();
-    stream.name = update.name;
+    let stream = DB.get_stream(&update.id)?;
+    if stream.is_none() {
+        Ok(update)
+    } else {
+        let mut stream = stream.unwrap();
+        stream.name = update.name;
 
-    DB.insert_stream(&stream).unwrap();
+        DB.insert_stream(&stream).unwrap();
 
-    tracing::debug!(
-        id = stream.id.clone().as_str(),
-        name = stream.name.clone().as_str(),
-        "update_stream",
-    );
+        tracing::debug!(
+            id = stream.id.clone().as_str(),
+            name = stream.name.clone().as_str(),
+            "update_stream",
+        );
 
-    Ok(stream)
+        Ok(stream)
+    }
 }
 
 #[no_mangle]

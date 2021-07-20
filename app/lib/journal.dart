@@ -75,13 +75,18 @@ class _EntryItemState extends State<EntryItem> {
           showDialog(
               context: context,
               builder: (_context) {
-                var streams = Provider.of<StreamsModel>(context, listen: false);
+                var state = Provider.of<JournalState>(context, listen: false);
                 return EntryEdit(
                     entry: this.widget.entry,
                     onUpdate: (Entry e) {
                       e.update().then((e) {
                         this.widget.onEntryUpdate(e);
-                        streams.update();
+                        state.updateStreams();
+                      });
+                    },
+                    onDelete: (Entry e) {
+                      e.delete().then((e) {
+                        this.widget.onEntryUpdate(e);
                       });
                     });
               });
@@ -217,20 +222,25 @@ class _EntryLogState extends State<EntryLog> {
   }
 
   void _createEntry(context) {
-    Entry.create(Provider.of<StreamsModel>(context, listen: false)
-            .fromMetaOrQuery(
-                Provider.of<SearchQueryModel>(context, listen: false).query()))
+    Entry.create(Provider.of<JournalState>(context, listen: false)
+            .streamsFromMetaOrQuery(
+                Provider.of<JournalState>(context, listen: false).query()))
         .then((entry) {
       showDialog(
           context: context,
           builder: (_context) {
-            var streams = Provider.of<StreamsModel>(context, listen: false);
+            var state = Provider.of<JournalState>(context, listen: false);
             return EntryEdit(
                 entry: entry,
                 onUpdate: (Entry e) {
                   e.update().then((value) {
                     _refresh(false);
-                    streams.update();
+                    state.updateStreams();
+                  });
+                },
+                onDelete: (Entry e) {
+                  e.delete().then((value) {
+                    _refresh(false);
                   });
                 });
           });
@@ -468,7 +478,7 @@ class _SearchBoxState extends State<SearchBox> {
           child: Container(
             padding: const EdgeInsets.only(bottom: 1.0),
             child: Icon(
-              Icons.menu,
+              Icons.menu_open,
               size: 18,
             ),
           ),
@@ -517,20 +527,20 @@ class _JournalState extends State<Journal> {
       decoration: BoxDecoration(
         color: Colors.white,
       ),
-      child: Consumer<SearchQueryModel>(
-        builder: (context, searchQuery, child) => Column(
+      child: Consumer<JournalState>(
+        builder: (context, state, child) => Column(
           children: [
             SearchBox(
-              searchQuery: searchQuery.query(),
+              searchQuery: state.query(),
               searchFocusNode: _searchFocusNode,
               onMenu: () => this.widget.onMenu(),
               onUpdate: (query) {
-                searchQuery.update(query);
+                state.updateQuery(query);
               },
             ),
             Expanded(
                 child: EntryLog(
-              searchQuery: searchQuery.query(),
+              searchQuery: state.query(),
               onSearchRequested: () {
                 _searchFocusNode.requestFocus();
               },

@@ -56,6 +56,7 @@ class _LoginState extends State<Login> {
   }
 
   Future<void> _signUpWithEmail() async {
+    print("GO");
     try {
       // ignore: unused_local_variable
       UserCredential userCredential =
@@ -63,6 +64,7 @@ class _LoginState extends State<Login> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+      print("DONE");
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,6 +79,8 @@ class _LoginState extends State<Login> {
           ),
         );
       }
+    } catch (e) {
+      print(e);
     }
   }
 
@@ -99,6 +103,9 @@ class _LoginState extends State<Login> {
                   TextFormField(
                     autofocus: true,
                     controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enableSuggestions: true,
+                    autocorrect: false,
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText: 'email@example.com',
@@ -117,6 +124,10 @@ class _LoginState extends State<Login> {
                   ),
                   TextFormField(
                     autofocus: false,
+                    keyboardType: TextInputType.visiblePassword,
+                    obscureText: true,
+                    enableSuggestions: false,
+                    autocorrect: false,
                     controller: _passwordController,
                     decoration: const InputDecoration(
                       border: InputBorder.none,
@@ -145,7 +156,7 @@ class _LoginState extends State<Login> {
                           splashColor: Colors.transparent,
                           highlightColor: Colors.transparent,
                           onTap: () async {
-                            await _signInWithEmail();
+                            await _signUpWithEmail();
                           },
                           child: Text('Sign-up'),
                         ),
@@ -158,12 +169,11 @@ class _LoginState extends State<Login> {
                           splashColor: Colors.transparent,
                           highlightColor: Colors.transparent,
                           onTap: () async {
-                            await _signUpWithEmail();
+                            await _signInWithEmail();
                           },
                           child: Text('Sign-in'),
                         ),
                       ),
-                      Expanded(child: Container()),
                     ],
                   ),
                 ],

@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
-import 'package:flutter/material.dart';
-
 import 'dart:ffi';
 import 'dart:io';
-import 'package:app/srv_bindings.dart' as srv;
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:app/srv_bindings.dart' as srv;
 
 final s = Platform.isMacOS
     ? srv.NativeLibrary(DynamicLibrary.open('libsrv.dylib'))
@@ -45,6 +45,23 @@ class Entry {
         meta: json['meta'],
         title: json['title'],
         body: json['body']);
+  }
+
+  static bool inboxInMeta(String meta) {
+    RegExp r = new RegExp(
+      r"\{[^\{\}]+}",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    bool inbox = false;
+    r.allMatches(meta).map((match) => match.group(0)).forEach((m) {
+      if (m != null) {
+        if (m.substring(1, m.length - 1) == "Inbox") {
+          inbox = true;
+        }
+      }
+    });
+    return inbox;
   }
 
   List<String> streamNamesNotInQuery(String query) {
@@ -209,22 +226,42 @@ class StreamList {
   }
 }
 
-class SearchQueryModel extends ChangeNotifier {
-  SearchQueryModel(String query) {
+class JournalState extends ChangeNotifier {
+  JournalState(String query) {
     this._query = query;
+    this._streams = [];
+    this._user = null;
+    this.updateStreams();
+    this._auth.userChanges().listen((u) {
+      this._user = u;
+      notifyListeners();
+    });
   }
 
   late String _query;
+  late List<Stream> _streams;
+  late User? _user;
 
-  void streamSelect(Stream stream) {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  bool authenticated() {
+    return _user != null;
+  }
+
+  Future<void> signOut() async {
+    print(this._user);
+    await _auth.signOut();
+  }
+
+  void querySelectStream(Stream stream) {
     if (stream.id == "all") {
-      update("");
+      updateQuery("");
     } else {
-      update("{" + stream.name + "}");
+      updateQuery("{" + stream.name + "}");
     }
   }
 
-  void streamToggle(Stream stream) {
+  void queryToggleStream(Stream stream) {
     if (_query.contains("{" + stream.name + "}")) {
       _query = _query.replaceAll("{" + stream.name + "}", "");
     } else {
@@ -235,18 +272,18 @@ class SearchQueryModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void streamRemove(Stream stream) {
+  void queryRemoveStream(Stream stream) {
     _query = _query.replaceAll("{" + stream.name + "}", "");
     _query = _query.replaceAll("  ", " ");
     _query = _query.trim();
     notifyListeners();
   }
 
-  bool containsStream(Stream stream) {
+  bool queryContainsStream(Stream stream) {
     return _query.contains("{" + stream.name + "}");
   }
 
-  void update(String query) {
+  void updateQuery(String query) {
     this._query = query;
     notifyListeners();
   }
@@ -254,21 +291,12 @@ class SearchQueryModel extends ChangeNotifier {
   String query() {
     return this._query;
   }
-}
-
-class StreamsModel extends ChangeNotifier {
-  StreamsModel() {
-    this._streams = [];
-    this.update();
-  }
-
-  late List<Stream> _streams;
 
   List<Stream> streams() {
     return _streams;
   }
 
-  Stream? _fromName(String name) {
+  Stream? _streamFromName(String name) {
     for (var s in _streams) {
       if (s.name == name) {
         return s;
@@ -277,7 +305,7 @@ class StreamsModel extends ChangeNotifier {
     return null;
   }
 
-  List<Stream> fromMetaOrQuery(String metaOrQuery) {
+  List<Stream> streamsFromMetaOrQuery(String metaOrQuery) {
     RegExp r = new RegExp(
       r"\{[^\{\}]+}",
       caseSensitive: false,
@@ -286,7 +314,7 @@ class StreamsModel extends ChangeNotifier {
     List<Stream> streams = [];
     r.allMatches(metaOrQuery).map((match) => match.group(0)).forEach((m) {
       if (m != null) {
-        var s = _fromName(m.substring(1, m.length - 1));
+        var s = _streamFromName(m.substring(1, m.length - 1));
         if (s != null) {
           streams.add(s);
         }
@@ -295,7 +323,7 @@ class StreamsModel extends ChangeNotifier {
     return streams;
   }
 
-  void update() {
+  void updateStreams() {
     // Update the streams on the network and call notifyListeners().
     StreamList.fetch().then((ss) {
       _streams = ss.streams;

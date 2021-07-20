@@ -6,7 +6,6 @@ import 'package:app/login.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,9 +19,7 @@ class DumpApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (context) => SearchQueryModel('{Inbox}')),
-        ChangeNotifierProvider(create: (context) => StreamsModel()),
+        ChangeNotifierProvider(create: (context) => JournalState('{Inbox}')),
       ],
       child: MaterialApp(
         title: 'Dump',
@@ -52,27 +49,22 @@ class DumpTop extends StatefulWidget {
   _DumpTopState createState() => _DumpTopState();
 }
 
-final FirebaseAuth _auth = FirebaseAuth.instance;
-
 class _DumpTopState extends State<DumpTop> {
-  User? user;
-
   @override
   void initState() {
-    user = null;
-    _auth.userChanges().listen((u) => setState(() => user = u));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     bool isHandset = MediaQuery.of(context).size.width < 600;
-    if (user == null) {
-      return Scaffold(
-        body: Login(),
-      );
-    }
-    return isHandset ? _buildHandset(context) : _buildNormal(context);
+
+    return Consumer<JournalState>(
+        builder: (context, state, child) => state.authenticated()
+            ? (isHandset ? _buildHandset(context) : _buildNormal(context))
+            : Scaffold(
+                body: Login(),
+              ));
   }
 
   Widget _buildHandset(BuildContext context) {
@@ -92,9 +84,11 @@ class _DumpTopState extends State<DumpTop> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => Consumer<StreamsModel>(
-                  builder: (context, streams, child) => Menu(
-                    streams: streams.streams(),
+                builder: (context) => Consumer<JournalState>(
+                  builder: (context, state, child) => Scaffold(
+                    body: Menu(
+                      streams: state.streams(),
+                    ),
                   ),
                 ),
               ),
@@ -113,9 +107,9 @@ class _DumpTopState extends State<DumpTop> {
         children: [
           SizedBox(
             width: 250,
-            child: Consumer<StreamsModel>(
-              builder: (context, streams, child) => Menu(
-                streams: streams.streams(),
+            child: Consumer<JournalState>(
+              builder: (context, state, child) => Menu(
+                streams: state.streams(),
               ),
             ),
           ),

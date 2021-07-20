@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:app/models.dart';
 import 'package:hovering/hovering.dart';
 
+import 'dart:math' as math;
+
 class StreamDeleteDialog extends StatelessWidget {
   StreamDeleteDialog({
     required this.stream,
@@ -174,7 +176,7 @@ class _StreamEditState extends State<StreamEdit> {
 class StreamItem extends StatelessWidget {
   StreamItem(
       {required this.stream,
-      required this.searchQuery,
+      required this.state,
       required this.onTap,
       required this.onDoubleTap})
       : super(key: ObjectKey(stream.id));
@@ -182,7 +184,7 @@ class StreamItem extends StatelessWidget {
   final Stream stream;
   final Function onTap;
   final Function onDoubleTap;
-  final SearchQueryModel searchQuery;
+  final JournalState state;
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +207,7 @@ class StreamItem extends StatelessWidget {
         },
         child: Card(
           elevation: 0,
-          color: searchQuery.containsStream(stream)
+          color: state.queryContainsStream(stream)
               ? Colors.grey[300]
               : Colors.transparent,
           clipBehavior: Clip.antiAlias,
@@ -243,13 +245,13 @@ class StreamItem extends StatelessWidget {
                           showDialog(
                               context: context,
                               builder: (_context) {
-                                var streams = Provider.of<StreamsModel>(context,
+                                var state = Provider.of<JournalState>(context,
                                     listen: false);
                                 return StreamEdit(
                                     stream: stream,
                                     onUpdate: (Stream s) {
                                       s.update().then((value) {
-                                        streams.update();
+                                        state.updateStreams();
                                       });
                                     });
                               });
@@ -276,17 +278,14 @@ class StreamItem extends StatelessWidget {
                           showDialog(
                               context: context,
                               builder: (_context) {
-                                var searchQuery = Provider.of<SearchQueryModel>(
-                                    context,
-                                    listen: false);
-                                var streams = Provider.of<StreamsModel>(context,
+                                var state = Provider.of<JournalState>(context,
                                     listen: false);
                                 return StreamDeleteDialog(
                                     stream: stream,
                                     onConfirm: () {
                                       stream.delete().then((s) {
-                                        streams.update();
-                                        searchQuery.streamRemove(stream);
+                                        state.updateStreams();
+                                        state.queryRemoveStream(stream);
                                       });
                                     });
                               });
@@ -337,23 +336,45 @@ class Menu extends StatelessWidget {
 
   List<Widget> _buildNormalChildren(BuildContext context) {
     final streams = List<Widget>.from(this.streams.map((Stream stream) {
-      return Consumer<SearchQueryModel>(
-          builder: (context, searchQuery, child) => StreamItem(
+      return Consumer<JournalState>(
+          builder: (context, state, child) => StreamItem(
               stream: stream,
-              searchQuery: searchQuery,
+              state: state,
               onTap: () {
-                searchQuery.streamToggle(stream);
+                state.queryToggleStream(stream);
               },
               onDoubleTap: () {
-                searchQuery.streamSelect(stream);
+                state.querySelectStream(stream);
               }));
     }));
+
+    var state = Provider.of<JournalState>(context, listen: false);
 
     return [
       Expanded(
           child: ListView(
               padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
               children: streams)),
+      MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            state.signOut();
+            Navigator.pop(context);
+          },
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: Text(
+              "Sign Out",
+              style: TextStyle(
+                fontSize: 11.0,
+                fontWeight: FontWeight.w400,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+        ),
+      ),
     ];
   }
 
@@ -367,7 +388,9 @@ class Menu extends StatelessWidget {
         1,
         Row(
           children: [
-            SizedBox(width: 20.0),
+            Expanded(
+              child: Container(),
+            ),
             Container(
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
@@ -376,16 +399,14 @@ class Menu extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.only(bottom: 1.0),
                     child: Icon(
-                      Icons.list,
+                      Icons.arrow_forward,
                       size: 18,
                     ),
                   ),
                 ),
               ),
             ),
-            Expanded(
-              child: Container(),
-            ),
+            SizedBox(width: 20.0),
           ],
         ));
     return children;
