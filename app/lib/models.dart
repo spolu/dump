@@ -84,6 +84,7 @@ class Entry {
   Future<Entry> update() async {
     final req = jsonEncode(<String, dynamic>{
       'id': id,
+      'created': created,
       'title': title == '' ? "(empty)" : title,
       'meta': meta,
       'body': body,
