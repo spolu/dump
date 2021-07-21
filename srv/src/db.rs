@@ -1,4 +1,4 @@
-use crate::models::{Entry, Stream};
+use crate::models::{Entry, EntryCreation, Stream};
 use anyhow::Result;
 use bincode::{deserialize, serialize};
 use lazy_static::lazy_static;
@@ -66,6 +66,7 @@ impl DB {
         // Insert `{Inbox}` with special ID `_stream_id_[0-inbox]__`.
         let s = Stream {
             id: String::from("0-inbox"),
+            meta: String::from(""),
             name: String::from("Inbox"),
         };
         self.streams
@@ -115,6 +116,7 @@ impl DB {
                         .as_secs();
                     let s = Stream {
                         id: format!("{}-{}", now, nanoid!()),
+                        meta: String::from(""),
                         name: name.clone(),
                     };
                     self.streams
@@ -249,25 +251,21 @@ impl DB {
         m
     }
 
-    pub fn create_entry(&self, create: &Entry) -> Result<Entry> {
+    pub fn create_entry(&self, create: &EntryCreation) -> Result<Entry> {
         let now = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_secs();
 
-        let meta = self.preprocess_meta(&create.meta)?;
-
-        let mut entry = Entry {
-            id: Some(format!("{}-{}", now, nanoid!())),
-            created: Some(now),
+        let entry = Entry {
+            id: format!("{}-{}", now, nanoid!()),
+            created: now,
             title: create.title.clone(),
-            meta: meta.clone(),
+            meta: create.meta.clone(),
             body: create.body.clone(),
         };
 
         self.insert_entry(&entry).unwrap();
-
-        entry.meta = self.postprocess_meta(&meta)?;
 
         Ok(entry)
     }
@@ -281,7 +279,7 @@ impl DB {
         };
 
         self.entries.insert(
-            entry.id.clone().unwrap().as_bytes(),
+            entry.id.clone().as_bytes(),
             serialize(&entry).unwrap(),
         )?;
         Ok(())

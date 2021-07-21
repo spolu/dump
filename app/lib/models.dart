@@ -162,17 +162,19 @@ class EntryList {
 }
 
 class Stream {
-  const Stream({required this.id, required this.name});
+  const Stream({required this.id, required this.meta, required this.name});
   final String id;
+  final String meta;
   final String name;
 
   factory Stream.fromJson(Map<String, dynamic> json) {
-    return Stream(id: json['id'], name: json['name']);
+    return Stream(id: json['id'], meta: json['meta'], name: json['name']);
   }
 
   Future<Stream> update() async {
     final req = jsonEncode(<String, dynamic>{
       'id': id,
+      'meta': meta,
       'name': name,
     });
 
@@ -186,6 +188,7 @@ class Stream {
   Future<Stream> delete() async {
     final req = jsonEncode(<String, dynamic>{
       'id': id,
+      'meta': meta,
       'name': name,
     });
 

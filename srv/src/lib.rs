@@ -1,12 +1,38 @@
 use anyhow::Result;
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::ffi::{CStr, CString};
 use std::os::raw;
 use std::path::Path;
 
 mod db;
-mod models;
+pub mod models;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EntryList {
+    pub total: usize,
+    pub offset: usize,
+    pub entries: Vec<models::Entry>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StreamList {
+    pub total: usize,
+    pub streams: Vec<models::Stream>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListOptions {
+    pub query: String,
+    pub offset: usize,
+    pub limit: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ErrorResponse {
+    pub error: String,
+}
 
 lazy_static! {
     static ref DB: db::DB =
@@ -23,7 +49,7 @@ pub extern "C" fn response_free_ffi(response: *mut raw::c_char) {
     };
 }
 
-fn list_entries(options: models::ListOptions) -> Result<models::EntryList> {
+fn list_entries(options: ListOptions) -> Result<EntryList> {
     let (total, entries) = DB
         .list_entries(&options.query, options.offset, options.limit)
         .unwrap();
@@ -36,7 +62,7 @@ fn list_entries(options: models::ListOptions) -> Result<models::EntryList> {
         "list_entries",
     );
 
-    Ok(models::EntryList {
+    Ok(EntryList {
         entries,
         total,
         offset: options.offset,
@@ -47,14 +73,14 @@ macro_rules! make_ffi {
     ($function:expr, $request:expr, $type:ty) => {{
         let request_c_str = unsafe { CStr::from_ptr($request) };
         let json = match request_c_str.to_str() {
-            Err(err) => serde_json::to_string(&models::ErrorResponse {
+            Err(err) => serde_json::to_string(&ErrorResponse {
                 error: format!("{}", err),
             })
             .unwrap(),
             Ok(query) => {
                 let r: Result<$type, serde_json::Error> = serde_json::from_str(query);
                 match r {
-                    Err(err) => serde_json::to_string(&models::ErrorResponse {
+                    Err(err) => serde_json::to_string(&ErrorResponse {
                         error: format!("{}", err),
                     })
                     .unwrap(),
@@ -69,15 +95,15 @@ macro_rules! make_ffi {
 
 #[no_mangle]
 pub extern "C" fn list_entries_ffi(request: *const raw::c_char) -> *mut raw::c_char {
-    make_ffi!(list_entries, request, models::ListOptions)
+    make_ffi!(list_entries, request, ListOptions)
 }
 
-fn create_entry(create: models::Entry) -> Result<models::Entry> {
+fn create_entry(create: models::EntryCreation) -> Result<models::Entry> {
     let entry = DB.create_entry(&create)?;
 
     tracing::debug!(
-        id = entry.id.clone().unwrap().as_str(),
-        created = entry.created.unwrap(),
+        id = entry.id.clone().as_str(),
+        created = entry.created,
         title = entry.title.clone().as_str(),
         meta = entry.meta.clone().as_str(),
         "create_entry",
@@ -88,15 +114,22 @@ fn create_entry(create: models::Entry) -> Result<models::Entry> {
 
 #[no_mangle]
 pub extern "C" fn create_entry_ffi(request: *const raw::c_char) -> *mut raw::c_char {
-    make_ffi!(create_entry, request, models::Entry)
+    make_ffi!(create_entry, request, models::EntryCreation)
 }
 
 fn update_entry(update: models::Entry) -> Result<models::Entry> {
     // If the entry does not exist anymore, re-create it as we don't want to loose data. It will
     // get created with a new ID and creation date.
-    let mut entry = match DB.get_entry(update.id.as_ref().unwrap())? {
+    let mut entry = match DB.get_entry(&update.id)? {
         Some(e) => e,
-        None => DB.create_entry(&update)?,
+        None => {
+            let create = models::EntryCreation {
+                meta: update.meta.clone(),
+                title: update.title.clone(),
+                body: update.body.clone(),
+            };
+            DB.create_entry(&create)?
+        },
     };
     entry.title = update.title;
     entry.body = update.body;
@@ -105,8 +138,8 @@ fn update_entry(update: models::Entry) -> Result<models::Entry> {
     DB.insert_entry(&entry)?;
 
     tracing::debug!(
-        id = entry.id.clone().unwrap().as_str(),
-        created = entry.created.unwrap(),
+        id = entry.id.clone().as_str(),
+        created = entry.created,
         title = entry.title.clone().as_str(),
         meta = entry.meta.clone().as_str(),
         "update_entry",
@@ -121,9 +154,9 @@ pub extern "C" fn update_entry_ffi(request: *const raw::c_char) -> *mut raw::c_c
 }
 
 fn delete_entry(delete: models::Entry) -> Result<models::Entry> {
-    DB.delete_entry(delete.id.as_ref().unwrap())?;
+    DB.delete_entry(&delete.id)?;
 
-    tracing::debug!(id = delete.id.as_ref().unwrap().as_str(), "delete_entry",);
+    tracing::debug!(id = delete.id.as_str(), "delete_entry",);
 
     Ok(delete)
 }
@@ -133,18 +166,18 @@ pub extern "C" fn delete_entry_ffi(request: *const raw::c_char) -> *mut raw::c_c
     make_ffi!(delete_entry, request, models::Entry)
 }
 
-fn list_streams(_options: models::ListOptions) -> Result<models::StreamList> {
+fn list_streams(_options: ListOptions) -> Result<StreamList> {
     let streams: Vec<models::Stream> = DB.list_streams()?;
     let total = streams.len();
 
     tracing::debug!(total, "list_streams",);
 
-    Ok(models::StreamList { streams, total })
+    Ok(StreamList { streams, total })
 }
 
 #[no_mangle]
 pub extern "C" fn list_streams_ffi(request: *const raw::c_char) -> *mut raw::c_char {
-    make_ffi!(list_streams, request, models::ListOptions)
+    make_ffi!(list_streams, request, ListOptions)
 }
 
 fn delete_stream(delete: models::Stream) -> Result<models::Stream> {

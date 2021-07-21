@@ -1,14 +1,19 @@
 [package]
 name = "srv"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 
 [lib]
 name = "srv"
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "convert"
+path = "bin/convert.rs"
 
 [dependencies]
 tokio = { version = "1.0.2", features = ["full"] }
+clap = "2.33.3"
 regex = "1"
 anyhow = "1.0.38"
 tracing = "0.1"

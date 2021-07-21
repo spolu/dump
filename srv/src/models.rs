@@ -2,7 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Entry {
+pub struct EntryCreation {
+    pub meta: String,
+    pub title: String,
+    pub body: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EntryPrev {
     pub id: Option<String>,
     pub created: Option<u64>,
     pub meta: String,
@@ -11,15 +18,24 @@ pub struct Entry {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct EntryList {
-    pub total: usize,
-    pub offset: usize,
-    pub entries: Vec<Entry>,
+pub struct Entry {
+    pub id: String,
+    pub created: u64,
+    pub meta: String,
+    pub title: String,
+    pub body: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StreamPrev {
+    pub id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Eq)]
 pub struct Stream {
     pub id: String,
+    pub meta: String,
     pub name: String,
 }
 
@@ -62,24 +78,6 @@ impl PartialOrd for Stream {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct StreamList {
-    pub total: usize,
-    pub streams: Vec<Stream>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ListOptions {
-    pub query: String,
-    pub offset: usize,
-    pub limit: usize,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct ErrorResponse {
-    pub error: String,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,30 +86,35 @@ mod tests {
     fn test_stream_parent_names() {
         let s = Stream {
             id: String::from("foo"),
+            meta: String::from(""),
             name: String::from("Foo/Bar"),
         };
         assert_eq!(vec!["Foo", "Foo/Bar"], s.parent_names());
 
         let s = Stream {
             id: String::from("foo"),
+            meta: String::from(""),
             name: String::from("Foo"),
         };
         assert_eq!(vec!["Foo"], s.parent_names());
 
         let s = Stream {
             id: String::from("foo"),
+            meta: String::from(""),
             name: String::from("Foo/Bar/Acme"),
         };
         assert_eq!(vec!["Foo", "Foo/Bar", "Foo/Bar/Acme"], s.parent_names());
 
         let s = Stream {
             id: String::from("foo"),
+            meta: String::from(""),
             name: String::from("Foo/"),
         };
         assert_eq!(vec!["Foo", "Foo/"], s.parent_names());
 
         let s = Stream {
             id: String::from("foo"),
+            meta: String::from(""),
             name: String::from("/Foo/"),
         };
         assert_eq!(vec!["", "/Foo", "/Foo/"], s.parent_names());

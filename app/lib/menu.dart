@@ -92,6 +92,7 @@ class _StreamEditState extends State<StreamEdit> {
   void dispose() {
     this.widget.onUpdate(Stream(
           id: this.widget.stream.id,
+          meta: this.widget.stream.meta,
           name: _nameController.text,
         ));
     _nameController.dispose();
