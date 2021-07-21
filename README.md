@@ -29,25 +29,25 @@ git clone https://github.com/spolu/dump.git
 cd dump
 ```
 
+### Build Rust libraries
+
+```
+cd srv && cargo build --release && cd ..
+cd srv && cargo lipo --targets x86_64-apple-ios,aarch64-apple-ios --release && cd ..
+cd srv && cbindgen ./src/lib.rs -c cbindgen.toml | grep -v \#include | uniq > target/bindings.h && cd ..
+
+cp srv/target/release/libsrv.dylib app/macos/
+cp srv/target/bindings.h app/ios/Runner
+cp srv/target/universal/release/libsrv.a app/ios/
+```
+
 ### Build MacOS app
 
 ```bash
 cd app && flutter build macos --release && cd ..
 ```
 
-### Build the Rust Backend Binary
-
-```bash
-cd srv && cargo build --release && cd ..
-```
-
 ## Running Dump
-
-Run the local Rust server:
-
-```bash
-RUST_LOG=info ./srv/target/release/srv
-```
 
 Start the MacOS app:
 
