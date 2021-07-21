@@ -238,6 +238,16 @@ class JournalState extends ChangeNotifier {
     this.updateStreams();
     this._auth.userChanges().listen((u) {
       this._user = u;
+      if (u != null) {
+        u.getIdTokenResult().then((data) {
+          print("ID_TOKEN_RESULT");
+          print(data);
+        });
+        u.getIdToken().then((token) {
+          print("ID_TOKEN");
+          print(token);
+        });
+      }
       notifyListeners();
     });
   }
@@ -253,7 +263,6 @@ class JournalState extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    print(this._user);
     await _auth.signOut();
   }
 

@@ -6,7 +6,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw;
 use std::path::Path;
 
-mod db;
+pub mod db;
 pub mod models;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -32,6 +32,17 @@ pub struct ListOptions {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ErrorResponse {
     pub error: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SyncRequest {
+    pub uid: String,
+    pub jwt: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SyncStatus {
+    pub status: String,
 }
 
 lazy_static! {
@@ -216,4 +227,15 @@ fn update_stream(update: models::Stream) -> Result<models::Stream> {
 #[no_mangle]
 pub extern "C" fn update_stream_ffi(request: *const raw::c_char) -> *mut raw::c_char {
     make_ffi!(update_stream, request, models::Stream)
+}
+
+fn sync(s: SyncRequest) -> Result<SyncStatus> {
+    Ok(SyncStatus{
+        status: String::from("synced"),
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn sync_ffi(request: *const raw::c_char) -> *mut raw::c_char {
+    make_ffi!(sync, request, SyncRequest)
 }

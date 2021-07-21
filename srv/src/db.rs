@@ -1,15 +1,30 @@
 use crate::models::{Entry, EntryCreation, Stream};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use bincode::{deserialize, serialize};
 use lazy_static::lazy_static;
 use nanoid::nanoid;
 use regex::{Captures, Regex};
 use std::time::SystemTime;
 
+enum SyncUpdateKind {
+    InsertEntry,
+    DeleteEntry,
+    InsertStream,
+    DeleteStream,
+}
+
+pub struct SyncUpdate {
+    kind: SyncUpdateKind,
+    id: Option<String>,
+    entry: Option<Entry>,
+    stream: Option<Stream>,
+}
+
 #[derive(Debug, Clone)]
 pub struct DB {
     entries: sled::Tree,
     streams: sled::Tree,
+    sync: sled::Tree,
 }
 
 pub fn extract_stream_names(s: &String) -> Vec<String> {
@@ -56,7 +71,13 @@ impl DB {
         let entries = db.open_tree("entries")?;
         let streams = db.open_tree("streams")?;
 
-        let d = DB { entries, streams };
+        let sync = db.open_tree("sync")?;
+
+        let d = DB {
+            entries,
+            streams,
+            sync,
+        };
         d.init()?;
 
         Ok(d)
@@ -71,6 +92,14 @@ impl DB {
         };
         self.streams
             .insert(s.id.clone().as_bytes(), serialize(&s).unwrap())?;
+
+        match self.sync.get(b"sync_id")? {
+            Some(_) => {}
+            None => {
+                let sid: u64 = 0;
+                self.sync.insert(b"sync_id", serialize(&sid).unwrap())?;
+            }
+        };
 
         // TODO(spolu) postprocess and update all existing entries.
         let entries = self
@@ -94,6 +123,15 @@ impl DB {
         });
 
         Ok(())
+    }
+
+    pub fn get_sync_id(&self) -> Result<u64> {
+        match self.sync.get(b"sync_id")? {
+            Some(d) => {let sid: u64 = deserialize(&d).unwrap(); Ok(sid) }
+            None => {
+                Err(anyhow!("sync_id not present in sync tree"))
+            }
+        }
     }
 
     /// Finds a stream by name or create a new one with this name if it does not exist (if `create`
@@ -194,7 +232,8 @@ impl DB {
         if parent_streams {
             // If `parent_streams` is true, re-iterate on streams a second time and match streams
             // whose names are parents of the streams extracted previously.
-            let mut parent_streams = self.streams
+            let mut parent_streams = self
+                .streams
                 .iter()
                 .filter_map(|x| {
                     // let id = std::str::from_utf8(&x.clone().unwrap().0.to_owned());
@@ -209,9 +248,9 @@ impl DB {
                     }
                 })
                 .collect::<Vec<_>>();
-                parent_streams.sort_unstable();
-                parent_streams.dedup();
-                parent_streams
+            parent_streams.sort_unstable();
+            parent_streams.dedup();
+            parent_streams
         } else {
             // Otherwise return the `streams` directly.
             streams
@@ -270,6 +309,10 @@ impl DB {
         Ok(entry)
     }
 
+    pub fn sync_insert_entry(&self, update: &Entry) -> Result<()> {
+        Ok(())
+    }
+
     pub fn insert_entry(&self, update: &Entry) -> Result<()> {
         let meta = self.preprocess_meta(&update.meta)?;
 
@@ -278,15 +321,13 @@ impl DB {
             ..update.clone()
         };
 
-        self.entries.insert(
-            entry.id.clone().as_bytes(),
-            serialize(&entry).unwrap(),
-        )?;
+        self.entries
+            .insert(entry.id.clone().as_bytes(), serialize(&entry).unwrap())?;
         Ok(())
     }
 
     pub fn get_entry(&self, id: &String) -> Result<Option<Entry>> {
-        let e = &self.entries.get(id)?;
+        let e = &self.entries.get(id.as_bytes())?;
         match e {
             Some(d) => {
                 let mut entry: Entry = deserialize(d)?;

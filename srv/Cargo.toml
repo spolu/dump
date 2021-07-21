@@ -11,6 +11,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "convert"
 path = "bin/convert.rs"
 
+[[bin]]
+name = "sync"
+path = "bin/sync.rs"
+
+[[bin]]
+name = "force_resync"
+path = "bin/force_resync.rs"
+
 [dependencies]
 tokio = { version = "1.0.2", features = ["full"] }
 clap = "2.33.3"
@@ -32,6 +40,7 @@ serde = { version = "1.0.120", features = ["rc", "derive"] }
 nanoid = "0.4.0"
 shellexpand = "2.1.0"
 lazy_static = "1.4.0"
+firestore_grpc = "0.31"
 
 [build-dependencies]
 cbindgen = "0.19"
