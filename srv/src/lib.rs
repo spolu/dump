@@ -8,6 +8,7 @@ use std::path::Path;
 
 pub mod db;
 pub mod models;
+pub mod google;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EntryList {
