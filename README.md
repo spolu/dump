@@ -2,6 +2,8 @@
 
 <img width="1050" alt="Screen Shot 2021-07-12 at 13 58 08" src="https://user-images.githubusercontent.com/15067/125283961-3488cc00-e319-11eb-9df0-b015785005d7.png">
 
+<img width="912" alt="Screen Shot 2021-10-12 at 20 22 46" src="https://user-images.githubusercontent.com/15067/137008987-09fd7aa4-ee35-4bb3-a66e-2d3315e347fd.png">
+
 ## Build Instructions
 
 ### Prerequesites
